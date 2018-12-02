@@ -2,7 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use num_traits::Float;
 
-use crate::{dist_ordered_point::DistOrderedPoint, error::ErrorKind, Result};
+use crate::{kdtree_map::*, Result};
 
 #[derive(Debug, Clone)]
 pub struct KdTreeMultiMap<Axis, Point, Value>
@@ -10,36 +10,7 @@ where
     Axis: Float,
     Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
 {
-    dim: usize,
-    node_capacity: usize,
-
-    points: HashMap<Point, Vec<Value>>,
-    children: Option<Children<Axis, Point, Value>>,
-
-    bound: Bound<Axis>,
-}
-
-#[derive(Debug, Clone)]
-struct Children<Axis, Point, Value>
-where
-    Axis: Float,
-    Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
-{
-    split: Split<Axis>,
-    left: Box<KdTreeMultiMap<Axis, Point, Value>>,
-    right: Box<KdTreeMultiMap<Axis, Point, Value>>,
-}
-
-#[derive(Debug, Clone)]
-struct Split<Axis: Float> {
-    dim: usize,
-    thresh: Axis,
-}
-
-#[derive(Debug, Clone)]
-struct Bound<Axis: Float> {
-    min: Vec<Option<Axis>>,
-    max: Vec<Option<Axis>>,
+    map: KdTreeMap<Axis, Point, Vec<Value>>,
 }
 
 impl<Axis, Point, Value> KdTreeMultiMap<Axis, Point, Value>
@@ -54,29 +25,19 @@ where
     ///
     /// Panics if neither `dim` nor `node_capacity` is positive.
     pub fn new(dim: usize, node_capacity: usize) -> Self {
-        assert!(dim > 0, "the number of dimensions must be positive");
-        assert!(node_capacity > 0, "node capacity must be positive");
-
         Self {
-            dim,
-            node_capacity,
-            points: HashMap::new(),
-            children: None,
-            bound: Bound {
-                min: vec![None; dim],
-                max: vec![None; dim],
-            },
+            map: KdTreeMap::new(dim, node_capacity),
         }
     }
 
     /// Returns the number of dimensions of this kd-tree.
     pub fn dim(&self) -> usize {
-        self.dim
+        self.map.dim()
     }
 
     /// Returns the node capacity of this kd-tree.
     pub fn node_capacity(&self) -> usize {
-        self.node_capacity
+        self.map.node_capacity()
     }
 
     /// Returns the number of points this kd-tree holds.
@@ -106,19 +67,7 @@ where
     /// assert_eq!(kdtree.size(), 2);
     /// ```
     pub fn size(&self) -> usize {
-        let mut size = self.points.len();
-
-        if let Some(Children {
-            ref left,
-            ref right,
-            ..
-        }) = self.children
-        {
-            size += left.size();
-            size += right.size();
-        }
-
-        size
+        self.map.size()
     }
 
     /// Appends a point to this kd-tree with a value.
@@ -155,26 +104,26 @@ where
     pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
         // #![allow(clippy::map_entry)]
 
-        self.check_point(point.as_ref())?;
+        self.map.check_point(point.as_ref())?;
 
-        if self.points.contains_key(&point) {
-            self.points.get_mut(&point).unwrap().push(value);
+        if self.map.points.contains_key(&point) {
+            self.map.points.get_mut(&point).unwrap().push(value);
         } else if let Some(Children {
             ref split,
             ref mut left,
             ref mut right,
-        }) = self.children
+        }) = self.map.children
         {
             let Split { dim, thresh } = *split;
             if point.as_ref()[dim] < thresh {
-                left.as_mut().append(point, value)?;
+                left.as_mut().insert(point, value)?;
             } else {
-                right.as_mut().append(point, value)?;
+                right.as_mut().insert(point, value)?;
             }
         } else {
-            self.points.insert(point, vec![value]);
-            if self.points.len() > self.node_capacity {
-                self.split();
+            self.map.points.insert(point, vec![value]);
+            if self.map.points.len() > self.node_capacity() {
+                self.map.split();
             }
         }
 
@@ -267,163 +216,7 @@ where
         query: &Point,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Result<Option<(&Point, &Vec<Value>)>> {
-        self.check_point(query.as_ref())?;
-
-        if self.size() == 0 {
-            return Ok(None);
-        }
-
-        let mut leaf = self;
-        let mut nodes_other_side = vec![];
-        while let Some(Children {
-            split: Split { dim, thresh },
-            left,
-            right,
-        }) = &leaf.children
-        {
-            if query.as_ref()[*dim] < *thresh {
-                leaf = left;
-                nodes_other_side.push(right);
-            } else {
-                leaf = right;
-                nodes_other_side.push(left);
-            }
-        }
-
-        let mut point_nearest = leaf.nearest_point_node(query.as_ref(), dist_func);
-        while let Some(node_other_side) = nodes_other_side.pop() {
-            if node_other_side.dist_to_point(query.as_ref(), dist_func) > point_nearest.dist {
-                break;
-            }
-
-            let point_nearest_node = node_other_side.nearest_point_node(query.as_ref(), dist_func);
-            if point_nearest_node < point_nearest {
-                point_nearest = point_nearest_node;
-            }
-        }
-
-        Ok(Some(point_nearest.into()))
-    }
-
-    fn with_points_bound(
-        dim: usize,
-        node_capacity: usize,
-        points: HashMap<Point, Vec<Value>>,
-        bound: Bound<Axis>,
-    ) -> Self {
-        Self {
-            dim,
-            node_capacity,
-            points,
-            children: None,
-            bound,
-        }
-    }
-
-    fn check_point(&self, point: &[Axis]) -> Result<()> {
-        if point.len() != self.dim {
-            Err(ErrorKind::DimensionNotMatch {
-                expected: self.dim,
-                actual: point.len(),
-            })?;
-        }
-
-        for dim in point.iter() {
-            if !dim.is_finite() {
-                Err(ErrorKind::LocationNotFinite)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn split(&mut self) {
-        let Split { dim, thresh } = self.calc_split();
-
-        let (mut bound_left, mut bound_right) = (self.bound.clone(), self.bound.clone());
-        bound_left.max[dim] = Some(thresh);
-        bound_right.min[dim] = Some(thresh);
-
-        let (mut points_left, mut points_right) = (HashMap::new(), HashMap::new());
-        for (point, values) in self.points.drain() {
-            if point.as_ref()[dim] < thresh {
-                points_left.insert(point, values);
-            } else {
-                points_right.insert(point, values);
-            }
-        }
-
-        self.children = Some(Children {
-            split: Split { dim, thresh },
-            left: Box::new(KdTreeMultiMap::with_points_bound(
-                self.dim,
-                self.node_capacity,
-                points_left,
-                bound_left,
-            )),
-            right: Box::new(KdTreeMultiMap::with_points_bound(
-                self.dim,
-                self.node_capacity,
-                points_right,
-                bound_right,
-            )),
-        });
-    }
-
-    fn calc_split(&self) -> Split<Axis> {
-        let (mut dim, mut max_width) = (0, Axis::zero());
-        let mut thresh = Axis::zero();
-
-        for (d, (width, median)) in (0..self.dim).map(|dim| (dim, self.bounding_width_median(dim)))
-        {
-            if width > max_width {
-                dim = d;
-                max_width = width;
-                thresh = median;
-            }
-        }
-
-        Split { dim, thresh }
-    }
-
-    fn bounding_width_median(&self, dim: usize) -> (Axis, Axis) {
-        let points = self.points.keys().map(|p| p.as_ref()[dim]);
-
-        let min = points
-            .clone()
-            .min()
-            .expect("unexpectedly empty points in KdTreeMultiMap:bounding_width_median()");
-        let max = points.max().unwrap();
-
-        let width = max - min;
-        let median = min + (max - min) / Axis::from(2).unwrap();
-        (width, median)
-    }
-
-    fn nearest_point_node(
-        &self,
-        query: &[Axis],
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
-        self.points
-            .iter()
-            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
-            .min()
-            .expect("unexpectedly empty points in KdTreeMultiMap::nearest_point_node()")
-    }
-
-    fn dist_to_point(&self, point: &[Axis], dist_func: &Fn(&[Axis], &[Axis]) -> Axis) -> Axis {
-        use std::cmp;
-
-        let p2 = point
-            .iter()
-            .zip(self.bound.min.iter().zip(self.bound.max.iter()))
-            .map(|(&p, (min, max))| {
-                let p_min = min.and_then(|m| Some(cmp::max(m, p))).unwrap_or(p);
-                max.and_then(|m| Some(cmp::min(m, p_min))).unwrap_or(p_min)
-            }).collect::<Vec<Axis>>();
-
-        dist_func(point, &p2[..])
+        self.map.nearest(query, dist_func)
     }
 }
 
@@ -461,12 +254,12 @@ where
     /// );
     /// ```
     pub fn points_tree(&self) -> HashMap<Point, Vec<Value>> {
-        let mut points = self.points.clone();
+        let mut points = self.map.points.clone();
         if let Some(Children {
             ref left,
             ref right,
             ..
-        }) = self.children
+        }) = self.map.children
         {
             for (p, v) in left.points_tree() {
                 points.insert(p, v);

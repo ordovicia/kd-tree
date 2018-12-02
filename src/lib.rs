@@ -20,10 +20,10 @@
 //! let p1: [R64; 2] = [r64(1.0), r64(2.0)];
 //! let p2: [R64; 2] = [r64(3.0), r64(1.0)];
 //!
-//! kdtree.append(p1, 1.0);
-//! kdtree.append(p1, 2.0);
+//! kdtree.insert(p1, 1.0);
+//! kdtree.insert(p1, 2.0);
 //!
-//! kdtree.append(p2, 3.0);
+//! kdtree.insert(p2, 3.0);
 //!
 //! assert_eq!(kdtree.size(), 2);
 //!
@@ -43,9 +43,11 @@ extern crate num_traits;
 
 mod dist_ordered_point;
 mod error;
+mod kdtree_map;
 mod kdtree_multimap;
 
 pub use error::{Error, ErrorKind};
+pub use kdtree_map::KdTreeMap;
 pub use kdtree_multimap::KdTreeMultiMap;
 
 pub type Result<T> = std::result::Result<T, Error>;
