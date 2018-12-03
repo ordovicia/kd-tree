@@ -13,14 +13,14 @@ where
     dim: usize,
     node_capacity: usize,
 
-    pub(crate) points: HashMap<Point, Value>,
-    pub(crate) children: Option<Children<Axis, KdTreeMap<Axis, Point, Value>>>,
+    points: HashMap<Point, Vec<Value>>,
+    children: Option<Children<Axis, KdTreeMap<Axis, Point, Value>>>,
 
     bound: Bound<Axis>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Children<Axis, KdTree>
+struct Children<Axis, KdTree>
 where
     Axis: Float,
 {
@@ -30,13 +30,13 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Split<Axis: Float> {
+struct Split<Axis: Float> {
     dim: usize,
     thresh: Axis,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Bound<Axis: Float> {
+struct Bound<Axis: Float> {
     min: Vec<Option<Axis>>,
     max: Vec<Option<Axis>>,
 }
@@ -79,6 +79,7 @@ where
     }
 
     /// Returns the number of points this kd-tree holds.
+    /// Multiple values on the same point are counted as a single point.
     ///
     /// # Examples
     ///
@@ -91,10 +92,16 @@ where
     /// let mut kdtree = KdTreeMap::new(2, 1);
     /// assert_eq!(kdtree.size(), 0);
     ///
-    /// kdtree.insert([r64(1.0); 2], 1.0);
+    /// let p1: [R64; 2] = [r64(1.0); 2];
+    /// let p2: [R64; 2] = [r64(2.0); 2];
+    ///
+    /// kdtree.append(p1, 1.0);
     /// assert_eq!(kdtree.size(), 1);
     ///
-    /// kdtree.insert([r64(2.0); 2], 2.0);
+    /// kdtree.append(p1, 2.0);
+    /// assert_eq!(kdtree.size(), 1);
+    ///
+    /// kdtree.append(p2, 3.0);
     /// assert_eq!(kdtree.size(), 2);
     /// ```
     pub fn size(&self) -> usize {
@@ -114,7 +121,7 @@ where
     }
 
     /// Inserts a point to this kd-tree with a value.
-    /// If the same point already exists in this kd-tree, the value will be overwritten with the
+    /// If the same point already exists in this kd-tree, the values will be overwritten with the
     /// new one.
     ///
     /// Returns `Err` when the number of dimension of the point does not match with that of this
@@ -162,8 +169,68 @@ where
                 right.as_mut().insert(point, value)?;
             }
         } else {
-            self.points.insert(point, value);
+            self.points.insert(point, vec![value]);
             if self.points.len() > self.node_capacity {
+                self.split();
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Appends a point to this kd-tree with a value.
+    /// If the same point already exists in this kd-tree, the value is appended to the point, not
+    /// overwriting the existing values.
+    ///
+    /// Returns `Err` when the number of dimension of the point does not match with that of this
+    /// tree, or when the location of the point is not finite.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    ///
+    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
+    /// kdtree.append(p1, val);
+    /// ```
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    /// // The numbers of dimensions do not match
+    /// assert!(kdtree.append([r64(1.0); 1], 0.0).is_err());
+    /// ```
+    pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
+        // #![allow(clippy::map_entry)]
+
+        self.check_point(point.as_ref())?;
+
+        if self.points.contains_key(&point) {
+            self.points.get_mut(&point).unwrap().push(value);
+        } else if let Some(Children {
+            ref split,
+            ref mut left,
+            ref mut right,
+        }) = self.children
+        {
+            let Split { dim, thresh } = *split;
+            if point.as_ref()[dim] < thresh {
+                left.as_mut().insert(point, value)?;
+            } else {
+                right.as_mut().insert(point, value)?;
+            }
+        } else {
+            self.points.insert(point, vec![value]);
+            if self.points.len() > self.node_capacity() {
                 self.split();
             }
         }
@@ -208,24 +275,55 @@ where
     ///     None
     /// );
     ///
-    /// kdtree.insert(p1, 1.0);
-    /// kdtree.insert(p2, 2.0);
+    /// kdtree.append(p1, 1.0);
+    /// kdtree.append(p2, 2.0);
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&p1, &squared_euclidean).unwrap(),
-    ///     Some((&p1, &1.0))
+    ///     Some((&p1, &vec![1.0]))
     /// );
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&[r64(3.0), r64(3.0)], &squared_euclidean).unwrap(),
-    ///     Some((&p2, &2.0))
+    ///     Some((&p2, &vec![2.0]))
+    /// );
+    /// ```
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// # extern crate num_traits;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    /// use num_traits::{Float, Zero};
+    ///
+    /// let squared_euclidean = |p1: &[R64], p2: &[R64]| -> R64 {
+    ///     p1.iter()
+    ///         .zip(p2.iter())
+    ///         .map(|(&p1, &p2)| (p1 - p2) * (p1 - p2))
+    ///         .fold(R64::zero(), std::ops::Add::add)
+    /// };
+    ///
+    /// let mut kdtree = KdTreeMap::new(3, 2);
+    ///
+    /// let p1: [R64; 3] = [r64(1.0); 3];
+    /// let p2: [R64; 3] = [r64(2.0); 3];
+    ///
+    /// kdtree.append(p1, 1.0);
+    /// kdtree.append(p1, 2.0);
+    ///
+    /// kdtree.append(p2, 3.0);
+    ///
+    /// assert_eq!(
+    ///     kdtree.nearest(&[r64(1.2); 3], &squared_euclidean).unwrap(),
+    ///     Some((&p1, &vec![1.0, 2.0]))
     /// );
     /// ```
     pub fn nearest(
         &self,
         query: &Point,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> Result<Option<(&Point, &Value)>> {
+    ) -> Result<Option<(&Point, &Vec<Value>)>> {
         self.check_point(query.as_ref())?;
 
         if self.size() == 0 {
@@ -267,7 +365,7 @@ where
     fn with_points_bound(
         dim: usize,
         node_capacity: usize,
-        points: HashMap<Point, Value>,
+        points: HashMap<Point, Vec<Value>>,
         bound: Bound<Axis>,
     ) -> Self {
         Self {
@@ -279,7 +377,7 @@ where
         }
     }
 
-    pub(crate) fn check_point(&self, point: &[Axis]) -> Result<()> {
+    fn check_point(&self, point: &[Axis]) -> Result<()> {
         if point.len() != self.dim {
             Err(ErrorKind::DimensionNotMatch {
                 expected: self.dim,
@@ -296,7 +394,7 @@ where
         Ok(())
     }
 
-    pub(crate) fn split(&mut self) {
+    fn split(&mut self) {
         let Split { dim, thresh } = self.calc_split();
 
         let (mut bound_left, mut bound_right) = (self.bound.clone(), self.bound.clone());
@@ -363,7 +461,7 @@ where
         &self,
         query: &[Axis],
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> DistOrderedPoint<Axis, &Point, &Value> {
+    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
         self.points
             .iter()
             .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
@@ -409,16 +507,19 @@ where
     /// let p1: [R64; 2] = [r64(1.0); 2];
     /// let p2: [R64; 2] = [r64(2.0); 2];
     ///
-    /// kdtree.insert(p1, 1.0);
-    /// kdtree.insert(p2, 2.0);
+    /// kdtree.append(p1, 1.0);
+    /// kdtree.append(p1, 2.0);
+    ///
+    /// kdtree.append(p2, 3.0);
     ///
     /// assert_eq!(
     ///     kdtree.points_tree(),
-    ///     [(p1, 1.0), (p2, 2.0)].iter().cloned().collect()
+    ///     [(p1, vec![1.0, 2.0]), (p2, vec![3.0])].iter().cloned().collect()
     /// );
     /// ```
-    pub fn points_tree(&self) -> HashMap<Point, Value> {
+    pub fn points_tree(&self) -> HashMap<Point, Vec<Value>> {
         let mut points = self.points.clone();
+
         if let Some(Children {
             ref left,
             ref right,
@@ -432,6 +533,7 @@ where
                 points.insert(p, v);
             }
         }
+
         points
     }
 }
