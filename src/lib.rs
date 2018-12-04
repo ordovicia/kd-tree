@@ -18,9 +18,9 @@
 //! let p1: [R64; 2] = [r64(1.0), r64(2.0)];
 //! let p2: [R64; 2] = [r64(3.0), r64(1.0)];
 //!
-//! kdtree.append(p1, 1.0);
-//! kdtree.append(p1, 2.0);
-//! kdtree.append(p2, 3.0);
+//! kdtree.append(p1, 1.0).unwrap();
+//! kdtree.append(p1, 2.0).unwrap(); // append a value to the existing point
+//! kdtree.append(p2, 3.0).unwrap();
 //!
 //! assert_eq!(kdtree.size(), 2);
 //! assert_eq!(
@@ -28,24 +28,21 @@
 //!     Some((&p1, &vec![1.0, 2.0]))
 //! );
 //!
-//! kdtree.insert(p1, 4.0); // overwrite existing values
+//! kdtree.insert(p1, 4.0).unwrap(); // overwrite existing values
 //! assert_eq!(
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
 //!     Some((&p1, &vec![4.0]))
-//! );
-//!
-//! assert_eq!(
-//!     kdtree.points_tree(),
-//!     [(p1, vec![4.0]), (p2, vec![3.0])].iter().cloned().collect()
 //! );
 //! ```
 
 extern crate failure;
 extern crate num_traits;
 
+mod cell;
 mod dist_ordered_point;
 mod error;
 mod kdtree_map;
+mod split;
 
 pub use error::{Error, ErrorKind};
 pub use kdtree_map::KdTreeMap;

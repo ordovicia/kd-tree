@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 
-pub(crate) struct DistOrderedPoint<Axis, Point, Value> {
+pub struct DistOrderedPoint<Axis, Point, Value> {
     point: Point,
     value: Value,
-    pub(crate) dist: Axis,
+    pub dist: Axis,
 }
 
 impl<Axis, Point, Value> DistOrderedPoint<Axis, Point, Value> {

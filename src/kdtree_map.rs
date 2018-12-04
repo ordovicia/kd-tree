@@ -2,7 +2,9 @@ use std::{collections::HashMap, hash::Hash};
 
 use num_traits::Float;
 
-use crate::{dist_ordered_point::DistOrderedPoint, error::ErrorKind, Result};
+use crate::{
+    cell::Cell, dist_ordered_point::DistOrderedPoint, error::ErrorKind, split::Split, Result,
+};
 
 #[derive(Debug, Clone)]
 pub struct KdTreeMap<Axis, Point, Value>
@@ -16,7 +18,7 @@ where
     points: HashMap<Point, Vec<Value>>,
     children: Option<Children<Axis, KdTreeMap<Axis, Point, Value>>>,
 
-    bound: Bound<Axis>,
+    cell: Cell<Axis>,
 }
 
 #[derive(Debug, Clone)]
@@ -27,18 +29,6 @@ where
     split: Split<Axis>,
     left: Box<KdTree>,
     right: Box<KdTree>,
-}
-
-#[derive(Debug, Clone)]
-struct Split<Axis: Float> {
-    dim: usize,
-    thresh: Axis,
-}
-
-#[derive(Debug, Clone)]
-struct Bound<Axis: Float> {
-    min: Vec<Option<Axis>>,
-    max: Vec<Option<Axis>>,
 }
 
 impl<Axis, Point, Value> KdTreeMap<Axis, Point, Value>
@@ -61,10 +51,7 @@ where
             node_capacity,
             points: HashMap::new(),
             children: None,
-            bound: Bound {
-                min: vec![None; dim],
-                max: vec![None; dim],
-            },
+            cell: Cell::new(dim),
         }
     }
 
@@ -95,13 +82,13 @@ where
     /// let p1: [R64; 2] = [r64(1.0); 2];
     /// let p2: [R64; 2] = [r64(2.0); 2];
     ///
-    /// kdtree.append(p1, 1.0);
+    /// kdtree.append(p1, 1.0).unwrap();
     /// assert_eq!(kdtree.size(), 1);
     ///
-    /// kdtree.append(p1, 2.0);
+    /// kdtree.append(p1, 2.0).unwrap();
     /// assert_eq!(kdtree.size(), 1);
     ///
-    /// kdtree.append(p2, 3.0);
+    /// kdtree.append(p2, 3.0).unwrap();
     /// assert_eq!(kdtree.size(), 2);
     /// ```
     pub fn size(&self) -> usize {
@@ -138,18 +125,7 @@ where
     /// let mut kdtree = KdTreeMap::new(2, 1);
     ///
     /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
-    /// kdtree.insert(p1, val);
-    /// ```
-    ///
-    /// ```rust
-    /// # extern crate kdtree;
-    /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
-    /// use noisy_float::prelude::*;
-    ///
-    /// let mut kdtree = KdTreeMap::new(2, 1);
-    /// // The numbers of dimensions do not match
-    /// assert!(kdtree.insert([r64(1.0); 1], 0.0).is_err());
+    /// kdtree.insert(p1, val).unwrap();
     /// ```
     pub fn insert(&mut self, point: Point, value: Value) -> Result<()> {
         // #![allow(clippy::map_entry)]
@@ -162,8 +138,7 @@ where
             ref mut right,
         }) = self.children
         {
-            let Split { dim, thresh } = *split;
-            if point.as_ref()[dim] < thresh {
+            if split.belongs_to_left(&point) {
                 left.as_mut().insert(point, value)?;
             } else {
                 right.as_mut().insert(point, value)?;
@@ -196,18 +171,7 @@ where
     /// let mut kdtree = KdTreeMap::new(2, 1);
     ///
     /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
-    /// kdtree.append(p1, val);
-    /// ```
-    ///
-    /// ```rust
-    /// # extern crate kdtree;
-    /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
-    /// use noisy_float::prelude::*;
-    ///
-    /// let mut kdtree = KdTreeMap::new(2, 1);
-    /// // The numbers of dimensions do not match
-    /// assert!(kdtree.append([r64(1.0); 1], 0.0).is_err());
+    /// kdtree.append(p1, val).unwrap();
     /// ```
     pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
         // #![allow(clippy::map_entry)]
@@ -222,8 +186,7 @@ where
             ref mut right,
         }) = self.children
         {
-            let Split { dim, thresh } = *split;
-            if point.as_ref()[dim] < thresh {
+            if split.belongs_to_left(&point) {
                 left.as_mut().insert(point, value)?;
             } else {
                 right.as_mut().insert(point, value)?;
@@ -275,8 +238,8 @@ where
     ///     None
     /// );
     ///
-    /// kdtree.append(p1, 1.0);
-    /// kdtree.append(p2, 2.0);
+    /// kdtree.append(p1, 1.0).unwrap();
+    /// kdtree.append(p2, 2.0).unwrap();
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&p1, &squared_euclidean).unwrap(),
@@ -286,37 +249,6 @@ where
     /// assert_eq!(
     ///     kdtree.nearest(&[r64(3.0), r64(3.0)], &squared_euclidean).unwrap(),
     ///     Some((&p2, &vec![2.0]))
-    /// );
-    /// ```
-    ///
-    /// ```rust
-    /// # extern crate kdtree;
-    /// # extern crate noisy_float;
-    /// # extern crate num_traits;
-    /// use kdtree::KdTreeMap;
-    /// use noisy_float::prelude::*;
-    /// use num_traits::{Float, Zero};
-    ///
-    /// let squared_euclidean = |p1: &[R64], p2: &[R64]| -> R64 {
-    ///     p1.iter()
-    ///         .zip(p2.iter())
-    ///         .map(|(&p1, &p2)| (p1 - p2) * (p1 - p2))
-    ///         .fold(R64::zero(), std::ops::Add::add)
-    /// };
-    ///
-    /// let mut kdtree = KdTreeMap::new(3, 2);
-    ///
-    /// let p1: [R64; 3] = [r64(1.0); 3];
-    /// let p2: [R64; 3] = [r64(2.0); 3];
-    ///
-    /// kdtree.append(p1, 1.0);
-    /// kdtree.append(p1, 2.0);
-    ///
-    /// kdtree.append(p2, 3.0);
-    ///
-    /// assert_eq!(
-    ///     kdtree.nearest(&[r64(1.2); 3], &squared_euclidean).unwrap(),
-    ///     Some((&p1, &vec![1.0, 2.0]))
     /// );
     /// ```
     pub fn nearest(
@@ -332,13 +264,8 @@ where
 
         let mut leaf = self;
         let mut nodes_other_side = vec![];
-        while let Some(Children {
-            split: Split { dim, thresh },
-            left,
-            right,
-        }) = &leaf.children
-        {
-            if query.as_ref()[*dim] < *thresh {
+        while let Some(Children { split, left, right }) = &leaf.children {
+            if split.belongs_to_left(&query) {
                 leaf = left;
                 nodes_other_side.push(right);
             } else {
@@ -349,7 +276,11 @@ where
 
         let mut point_nearest = leaf.nearest_point_node(query.as_ref(), dist_func);
         while let Some(node_other_side) = nodes_other_side.pop() {
-            if node_other_side.dist_to_point(query.as_ref(), dist_func) > point_nearest.dist {
+            if node_other_side
+                .cell
+                .dist_to_point(query.as_ref(), dist_func)
+                > point_nearest.dist
+            {
                 break;
             }
 
@@ -362,18 +293,96 @@ where
         Ok(Some(point_nearest.into()))
     }
 
-    fn with_points_bound(
-        dim: usize,
-        node_capacity: usize,
-        points: HashMap<Point, Vec<Value>>,
-        bound: Bound<Axis>,
-    ) -> Self {
-        Self {
-            dim,
-            node_capacity,
-            points,
-            children: None,
-            bound,
+    fn nearest_point_node(
+        &self,
+        query: &[Axis],
+        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
+        self.points
+            .iter()
+            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
+            .min()
+            .expect("unexpectedly empty points in KdTreeMap::nearest_point_node()")
+    }
+
+    /// Returns a reference to the value corresponding to the key.
+    ///
+    /// Returns `Err` when the number of dimension of the point does not match with that of this
+    /// tree, or when the location of the point is not finite.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
+    ///
+    /// kdtree.insert(p1, val).unwrap();
+    /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![val]));
+    ///
+    /// assert_eq!(kdtree.get(&[r64(2.0); 2]).unwrap(), None);
+    /// ```
+    pub fn get(&self, query: &Point) -> Result<Option<&Vec<Value>>> {
+        self.check_point(query.as_ref())?;
+
+        let mut leaf = self;
+        while let Some(Children { split, left, right }) = &leaf.children {
+            if split.belongs_to_left(&query) {
+                leaf = left;
+            } else {
+                leaf = right;
+            }
+        }
+
+        Ok(leaf.points.get(query))
+    }
+
+    /// Returns a mutable reference to the value corresponding to the key.
+    ///
+    /// Returns `Err` when the number of dimension of the point does not match with that of this
+    /// tree, or when the location of the point is not finite.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
+    ///
+    /// kdtree.insert(p1, val).unwrap();
+    ///
+    /// *kdtree.get_mut(&p1).unwrap().unwrap() = vec![2.0];
+    /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![2.0]));
+    ///
+    /// assert_eq!(kdtree.get(&[r64(2.0); 2]).unwrap(), None);
+    /// ```
+    pub fn get_mut(&mut self, query: &Point) -> Result<Option<&mut Vec<Value>>> {
+        self.check_point(query.as_ref())?;
+        Ok(self.get_mut_unchecked(query))
+    }
+
+    fn get_mut_unchecked(&mut self, query: &Point) -> Option<&mut Vec<Value>> {
+        if let Some(Children {
+            ref split,
+            ref mut left,
+            ref mut right,
+        }) = self.children
+        {
+            if split.belongs_to_left(&query) {
+                left.get_mut_unchecked(query)
+            } else {
+                right.get_mut_unchecked(query)
+            }
+        } else {
+            self.points.get_mut(query)
         }
     }
 
@@ -395,15 +404,13 @@ where
     }
 
     fn split(&mut self) {
-        let Split { dim, thresh } = self.calc_split();
+        let split = self.calc_split();
 
-        let (mut bound_left, mut bound_right) = (self.bound.clone(), self.bound.clone());
-        bound_left.max[dim] = Some(thresh);
-        bound_right.min[dim] = Some(thresh);
+        let (bound_left, bound_right) = self.cell.split(&split);
 
         let (mut points_left, mut points_right) = (HashMap::new(), HashMap::new());
         for (point, values) in self.points.drain() {
-            if point.as_ref()[dim] < thresh {
+            if split.belongs_to_left(&point) {
                 points_left.insert(point, values);
             } else {
                 points_right.insert(point, values);
@@ -411,7 +418,7 @@ where
         }
 
         self.children = Some(Children {
-            split: Split { dim, thresh },
+            split,
             left: Box::new(KdTreeMap::with_points_bound(
                 self.dim,
                 self.node_capacity,
@@ -428,17 +435,12 @@ where
     }
 
     fn calc_split(&self) -> Split<Axis> {
-        let (mut dim, mut max_width) = (0, Axis::zero());
-        let mut thresh = Axis::zero();
-
-        for (d, (width, median)) in (0..self.dim).map(|dim| (dim, self.bounding_width_median(dim)))
-        {
-            if width > max_width {
-                dim = d;
-                max_width = width;
-                thresh = median;
-            }
-        }
+        let (dim, _, thresh) = (0..self.dim)
+            .map(|dim| {
+                let (width, median) = self.bounding_width_median(dim);
+                (dim, width, median)
+            }).max_by_key(|(_, width, _)| *width)
+            .expect("unexpectedly zero dimension in KdTreeMap::calc_split()");
 
         Split { dim, thresh }
     }
@@ -457,30 +459,19 @@ where
         (width, median)
     }
 
-    fn nearest_point_node(
-        &self,
-        query: &[Axis],
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
-        self.points
-            .iter()
-            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
-            .min()
-            .expect("unexpectedly empty points in KdTreeMap::nearest_point_node()")
-    }
-
-    fn dist_to_point(&self, point: &[Axis], dist_func: &Fn(&[Axis], &[Axis]) -> Axis) -> Axis {
-        use std::cmp;
-
-        let p2 = point
-            .iter()
-            .zip(self.bound.min.iter().zip(self.bound.max.iter()))
-            .map(|(&p, (min, max))| {
-                let p_min = min.and_then(|m| Some(cmp::max(m, p))).unwrap_or(p);
-                max.and_then(|m| Some(cmp::min(m, p_min))).unwrap_or(p_min)
-            }).collect::<Vec<Axis>>();
-
-        dist_func(point, &p2[..])
+    fn with_points_bound(
+        dim: usize,
+        node_capacity: usize,
+        points: HashMap<Point, Vec<Value>>,
+        cell: Cell<Axis>,
+    ) -> Self {
+        Self {
+            dim,
+            node_capacity,
+            points,
+            children: None,
+            cell,
+        }
     }
 }
 
@@ -547,13 +538,52 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn panic_new_zero_dim() {
+    fn test_new_panic_new_zero() {
         let _: KdTreeMap<R64, [R64; 0], f64> = KdTreeMap::new(0, 1);
     }
 
     #[test]
     #[should_panic]
-    fn panic_new_zero_capacity() {
+    fn test_new_panic_zero_capacity() {
         let _: KdTreeMap<R64, [R64; 2], f64> = KdTreeMap::new(2, 0);
+    }
+
+    #[test]
+    fn test_insert_err_dim() {
+        let mut kdtree = KdTreeMap::new(2, 1);
+        assert!(kdtree.insert([r64(1.0); 1], 0.0).is_err());
+    }
+
+    #[test]
+    fn test_append_err_dim() {
+        let mut kdtree = KdTreeMap::new(2, 1);
+        assert!(kdtree.append([r64(1.0); 1], 0.0).is_err());
+    }
+
+    #[test]
+    fn test_nearest_3d() {
+        use num_traits::Zero;
+
+        let squared_euclidean = |p1: &[R64], p2: &[R64]| -> R64 {
+            p1.iter()
+                .zip(p2.iter())
+                .map(|(&p1, &p2)| (p1 - p2) * (p1 - p2))
+                .fold(R64::zero(), std::ops::Add::add)
+        };
+
+        let mut kdtree = KdTreeMap::new(3, 2);
+
+        let p1: [R64; 3] = [r64(1.0); 3];
+        let p2: [R64; 3] = [r64(2.0); 3];
+
+        kdtree.append(p1, 1.0).unwrap();
+        kdtree.append(p1, 2.0).unwrap();
+
+        kdtree.append(p2, 3.0).unwrap();
+
+        assert_eq!(
+            kdtree.nearest(&[r64(1.2); 3], &squared_euclidean).unwrap(),
+            Some((&p1, &vec![1.0, 2.0]))
+        );
     }
 }
