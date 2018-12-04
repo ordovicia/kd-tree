@@ -6,17 +6,19 @@ pub struct Cell<Axis: Clone> {
     max: Vec<Option<Axis>>,
 }
 
-impl<Axis> Cell<Axis>
-where
-    Axis: Clone + PartialOrd,
-{
+impl<Axis: Clone> Cell<Axis> {
     pub fn new(dim: usize) -> Self {
         Self {
             min: vec![None; dim],
             max: vec![None; dim],
         }
     }
+}
 
+impl<Axis> Cell<Axis>
+where
+    Axis: Clone + PartialOrd,
+{
     pub fn split(&self, split: &Split<Axis>) -> (Self, Self) {
         let (mut left, mut right) = (self.clone(), self.clone());
 

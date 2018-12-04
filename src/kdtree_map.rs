@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct KdTreeMap<Axis, Point, Value>
 where
-    Axis: Float,
+    Axis: Ord + Float,
     Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
 {
     dim: usize,
@@ -22,10 +22,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-struct Children<Axis, KdTree>
-where
-    Axis: Float,
-{
+struct Children<Axis, KdTree> {
     split: Split<Axis>,
     left: Box<KdTree>,
     right: Box<KdTree>,
@@ -66,7 +63,7 @@ where
     }
 
     /// Returns the number of points this kd-tree holds.
-    /// Multiple values on the same point are counted as a single point.
+    /// Multiple values on the same point are counted as many.
     ///
     /// # Examples
     ///
@@ -80,19 +77,15 @@ where
     /// assert_eq!(kdtree.size(), 0);
     ///
     /// let p1: [R64; 2] = [r64(1.0); 2];
-    /// let p2: [R64; 2] = [r64(2.0); 2];
     ///
     /// kdtree.append(p1, 1.0).unwrap();
     /// assert_eq!(kdtree.size(), 1);
     ///
     /// kdtree.append(p1, 2.0).unwrap();
-    /// assert_eq!(kdtree.size(), 1);
-    ///
-    /// kdtree.append(p2, 3.0).unwrap();
     /// assert_eq!(kdtree.size(), 2);
     /// ```
     pub fn size(&self) -> usize {
-        let mut size = self.points.len();
+        let mut size = self.points.values().map(|values| values.len()).sum();
 
         if let Some(Children {
             ref left,
@@ -107,9 +100,95 @@ where
         size
     }
 
+    /// Returns the number of points this kd-tree holds.
+    /// Multiple values on the same point are counted as a single point.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    /// assert_eq!(kdtree.size(), 0);
+    ///
+    /// let p1: [R64; 2] = [r64(1.0); 2];
+    ///
+    /// kdtree.append(p1, 1.0).unwrap();
+    /// assert_eq!(kdtree.size_unique(), 1);
+    ///
+    /// kdtree.append(p1, 2.0).unwrap();
+    /// assert_eq!(kdtree.size_unique(), 1);
+    /// ```
+    pub fn size_unique(&self) -> usize {
+        let mut size = self.points.len();
+
+        if let Some(Children {
+            ref left,
+            ref right,
+            ..
+        }) = self.children
+        {
+            size += left.size_unique();
+            size += right.size_unique();
+        }
+
+        size
+    }
+
+    /// Appends a point to this kd-tree with a value.
+    /// If the same point already exists in this kd-tree, the value is appended to the existing
+    /// point.
+    ///
+    /// Returns `Err` when the number of dimension of the point does not match with that of this
+    /// tree, or when the location of the point is not finite.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::KdTreeMap;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeMap::new(2, 1);
+    ///
+    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
+    /// kdtree.append(p1, val).unwrap();
+    /// ```
+    pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
+        // #![allow(clippy::map_entry)]
+
+        self.check_point(point.as_ref())?;
+
+        if self.points.contains_key(&point) {
+            self.points.get_mut(&point).unwrap().push(value);
+        } else if let Some(Children {
+            ref split,
+            ref mut left,
+            ref mut right,
+        }) = self.children
+        {
+            if split.belongs_to_left(&point) {
+                left.as_mut().append(point, value)?;
+            } else {
+                right.as_mut().append(point, value)?;
+            }
+        } else {
+            self.points.insert(point, vec![value]);
+            if self.points.len() > self.node_capacity() {
+                self.split();
+            }
+        }
+
+        Ok(())
+    }
+
     /// Inserts a point to this kd-tree with a value.
-    /// If the same point already exists in this kd-tree, the values will be overwritten with the
-    /// new one.
+    /// If the same point already exists in this kd-tree, the values are overwritten with the new
+    /// one.
     ///
     /// Returns `Err` when the number of dimension of the point does not match with that of this
     /// tree, or when the location of the point is not finite.
@@ -146,54 +225,6 @@ where
         } else {
             self.points.insert(point, vec![value]);
             if self.points.len() > self.node_capacity {
-                self.split();
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Appends a point to this kd-tree with a value.
-    /// If the same point already exists in this kd-tree, the value is appended to the point, not
-    /// overwriting the existing values.
-    ///
-    /// Returns `Err` when the number of dimension of the point does not match with that of this
-    /// tree, or when the location of the point is not finite.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # extern crate kdtree;
-    /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
-    /// use noisy_float::prelude::*;
-    ///
-    /// let mut kdtree = KdTreeMap::new(2, 1);
-    ///
-    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
-    /// kdtree.append(p1, val).unwrap();
-    /// ```
-    pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
-        // #![allow(clippy::map_entry)]
-
-        self.check_point(point.as_ref())?;
-
-        if self.points.contains_key(&point) {
-            self.points.get_mut(&point).unwrap().push(value);
-        } else if let Some(Children {
-            ref split,
-            ref mut left,
-            ref mut right,
-        }) = self.children
-        {
-            if split.belongs_to_left(&point) {
-                left.as_mut().insert(point, value)?;
-            } else {
-                right.as_mut().insert(point, value)?;
-            }
-        } else {
-            self.points.insert(point, vec![value]);
-            if self.points.len() > self.node_capacity() {
                 self.split();
             }
         }
@@ -293,18 +324,6 @@ where
         Ok(Some(point_nearest.into()))
     }
 
-    fn nearest_point_node(
-        &self,
-        query: &[Axis],
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
-        self.points
-            .iter()
-            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
-            .min()
-            .expect("unexpectedly empty points in KdTreeMap::nearest_point_node()")
-    }
-
     /// Returns a reference to the value corresponding to the key.
     ///
     /// Returns `Err` when the number of dimension of the point does not match with that of this
@@ -369,23 +388,6 @@ where
         Ok(self.get_mut_unchecked(query))
     }
 
-    fn get_mut_unchecked(&mut self, query: &Point) -> Option<&mut Vec<Value>> {
-        if let Some(Children {
-            ref split,
-            ref mut left,
-            ref mut right,
-        }) = self.children
-        {
-            if split.belongs_to_left(&query) {
-                left.get_mut_unchecked(query)
-            } else {
-                right.get_mut_unchecked(query)
-            }
-        } else {
-            self.points.get_mut(query)
-        }
-    }
-
     fn check_point(&self, point: &[Axis]) -> Result<()> {
         if point.len() != self.dim {
             Err(ErrorKind::DimensionNotMatch {
@@ -401,6 +403,35 @@ where
         }
 
         Ok(())
+    }
+
+    fn nearest_point_node(
+        &self,
+        query: &[Axis],
+        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
+        self.points
+            .iter()
+            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
+            .min()
+            .expect("unexpectedly empty points in KdTreeMap::nearest_point_node()")
+    }
+
+    fn get_mut_unchecked(&mut self, query: &Point) -> Option<&mut Vec<Value>> {
+        if let Some(Children {
+            ref split,
+            ref mut left,
+            ref mut right,
+        }) = self.children
+        {
+            if split.belongs_to_left(&query) {
+                left.get_mut_unchecked(query)
+            } else {
+                right.get_mut_unchecked(query)
+            }
+        } else {
+            self.points.get_mut(query)
+        }
     }
 
     fn split(&mut self) {
@@ -498,10 +529,10 @@ where
     /// let p1: [R64; 2] = [r64(1.0); 2];
     /// let p2: [R64; 2] = [r64(2.0); 2];
     ///
-    /// kdtree.append(p1, 1.0);
-    /// kdtree.append(p1, 2.0);
+    /// kdtree.append(p1, 1.0).unwrap();
+    /// kdtree.append(p1, 2.0).unwrap();
     ///
-    /// kdtree.append(p2, 3.0);
+    /// kdtree.append(p2, 3.0).unwrap();
     ///
     /// assert_eq!(
     ///     kdtree.points_tree(),
@@ -532,8 +563,8 @@ where
 #[cfg(test)]
 mod tests {
     extern crate noisy_float;
-    use self::noisy_float::prelude::*;
 
+    use self::noisy_float::prelude::*;
     use super::*;
 
     #[test]

@@ -1,8 +1,12 @@
+//! # Kd-tree
+//!
+//! ## Examples
+//!
 //! ```rust
 //! # extern crate kdtree;
 //! # extern crate noisy_float;
 //! # extern crate num_traits;
-//! use kdtree::KdTreeMap;
+//! use kdtree::{KdTreeMap, KdTreeSet};
 //! use noisy_float::prelude::*;
 //! use num_traits::{Float, Zero};
 //!
@@ -13,6 +17,7 @@
 //!         .fold(R64::zero(), std::ops::Add::add)
 //! };
 //!
+//! // Map
 //! let mut kdtree = KdTreeMap::new(2, 4);
 //!
 //! let p1: [R64; 2] = [r64(1.0), r64(2.0)];
@@ -22,7 +27,9 @@
 //! kdtree.append(p1, 2.0).unwrap(); // append a value to the existing point
 //! kdtree.append(p2, 3.0).unwrap();
 //!
-//! assert_eq!(kdtree.size(), 2);
+//! assert_eq!(kdtree.size(), 3);
+//! assert_eq!(kdtree.size_unique(), 2);
+//!
 //! assert_eq!(
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
 //!     Some((&p1, &vec![1.0, 2.0]))
@@ -33,6 +40,21 @@
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
 //!     Some((&p1, &vec![4.0]))
 //! );
+//!
+//! // Set
+//! let mut kdtree = KdTreeSet::new(2, 4);
+//!
+//! kdtree.append(p1).unwrap();
+//! kdtree.append(p1).unwrap(); // append a point to the same location
+//! kdtree.append(p2).unwrap();
+//!
+//! assert_eq!(kdtree.size(), 3);
+//! assert_eq!(kdtree.size_unique(), 2);
+//!
+//! assert_eq!(
+//!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
+//!     Some((&p1, 2)) // the found points and their count
+//! );
 //! ```
 
 extern crate failure;
@@ -42,9 +64,11 @@ mod cell;
 mod dist_ordered_point;
 mod error;
 mod kdtree_map;
+mod kdtree_set;
 mod split;
 
 pub use error::{Error, ErrorKind};
 pub use kdtree_map::KdTreeMap;
+pub use kdtree_set::KdTreeSet;
 
 pub type Result<T> = std::result::Result<T, Error>;

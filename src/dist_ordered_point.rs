@@ -14,8 +14,8 @@ impl<Axis, Point, Value> DistOrderedPoint<Axis, Point, Value> {
 
 impl<Axis, Point, Value> PartialOrd for DistOrderedPoint<Axis, Point, Value>
 where
+    Axis: PartialOrd,
     Point: PartialEq,
-    Axis: Ord,
 {
     fn partial_cmp(&self, rhs: &Self) -> Option<Ordering> {
         self.dist.partial_cmp(&rhs.dist)
@@ -24,8 +24,8 @@ where
 
 impl<Axis, Point, Value> Ord for DistOrderedPoint<Axis, Point, Value>
 where
-    Point: PartialEq,
     Axis: Ord,
+    Point: PartialEq,
 {
     fn cmp(&self, rhs: &Self) -> Ordering {
         self.dist.cmp(&rhs.dist)
