@@ -1,4 +1,9 @@
-# KD-Tree
+# KD-Tree [![Build Status](https://travis-ci.com/ordovicia/kd-tree.svg?branch=master)](https://travis-ci.com/ordovicia/kd-tree)
+
+<!--
+[![kd-tree](https://img.shields.io/crates/v/kd-tree.svg)](https://crates.io/crates/kd-tree)
+[![kd-tree](https://docs.rs/kd-tree/badge.svg)](https://docs.rs/kd-tree)
+-->
 
 Various KD-Tree implementations with Rust.
 
