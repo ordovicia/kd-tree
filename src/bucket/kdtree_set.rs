@@ -46,9 +46,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -72,9 +72,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -102,9 +102,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -126,10 +126,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::{bucket::KdTreeSet, PointDist};
+    /// use kd_tree::{bucket::KdTreeSet, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -186,9 +186,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -218,9 +218,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);

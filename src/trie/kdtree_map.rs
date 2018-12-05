@@ -57,8 +57,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     /// assert_eq!(kdtree.size(), 0);
@@ -97,8 +97,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     /// assert_eq!(kdtree.size(), 0);
@@ -137,8 +137,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     ///
@@ -183,8 +183,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     ///
@@ -230,9 +230,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate num_traits;
-    /// use kdtree::{trie::KdTreeMap, PointDist};
+    /// use kd_tree::{trie::KdTreeMap, PointDist};
     ///
     /// let squared_euclidean = |p1: &[f64], p2: &[f64]| -> f64 {
     ///     p1.iter()
@@ -281,8 +281,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     /// let (p1, val)  = ([1.0; 2], 1.0);
@@ -325,8 +325,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     /// let (p1, val)  = ([1.0; 2], 1.0);
@@ -499,8 +499,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
-    /// use kdtree::trie::KdTreeMap;
+    /// # extern crate kd_tree;
+    /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
     /// assert_eq!(kdtree.size(), 0);

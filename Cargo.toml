@@ -1,5 +1,5 @@
 [package]
-name = "kdtree"
+name = "kd-tree"
 version = "0.1.0"
 authors = ["Hidehito Yabuuchi <hdht.ybuc@gmail.com>"]
 

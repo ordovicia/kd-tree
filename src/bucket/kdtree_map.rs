@@ -66,9 +66,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -104,9 +104,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -146,9 +146,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -197,9 +197,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -247,10 +247,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::{bucket::KdTreeMap, PointDist};
+    /// use kd_tree::{bucket::KdTreeMap, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -301,9 +301,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -337,9 +337,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -524,9 +524,9 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kdtree;
+    /// # extern crate kd_tree;
     /// # extern crate noisy_float;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);

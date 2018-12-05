@@ -3,17 +3,17 @@
 //  * support getting nearest k points
 //  * opt out supporting multi values
 
-//! # KD-tree
+//! KD-Tree
 //!
 //! ## Examples
 //!
 //! ### Bucket implementation
 //!
 //! ```rust
-//! # extern crate kdtree;
+//! # extern crate kd_tree;
 //! # extern crate noisy_float;
 //! # extern crate num_traits;
-//! use kdtree::{bucket::{KdTreeMap, KdTreeSet}, PointDist};
+//! use kd_tree::{bucket::{KdTreeMap, KdTreeSet}, PointDist};
 //! use noisy_float::prelude::*;
 //! use num_traits::{Float, Zero};
 //!
@@ -67,8 +67,8 @@
 //! ### Trie implementation
 //!
 //! ```rust
-//! # extern crate kdtree;
-//! use kdtree::{trie::{KdTreeMap, KdTreeSet}, PointDist};
+//! # extern crate kd_tree;
+//! use kd_tree::{trie::{KdTreeMap, KdTreeSet}, PointDist};
 //!
 //! let squared_euclidean = |p1: &[f64], p2: &[f64]| -> f64 {
 //!     p1.iter()
