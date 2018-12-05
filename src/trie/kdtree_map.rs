@@ -153,20 +153,18 @@ where
 
         if self.point.is_none() {
             self.point = Some((point, vec![value]));
+        } else if self.point.as_ref().unwrap().0 == point {
+            self.point.as_mut().unwrap().1.push(value);
         } else {
-            if self.point.as_ref().unwrap().0 == point {
-                self.point.as_mut().unwrap().1.push(value);
-            } else {
-                if self.children.is_none() {
-                    self.split();
-                }
+            if self.children.is_none() {
+                self.split();
+            }
 
-                let Children { split, left, right } = self.children.as_mut().unwrap();
-                if split.belongs_to_left(&point) {
-                    left.as_mut().append(point, value)?;
-                } else {
-                    right.as_mut().append(point, value)?;
-                }
+            let Children { split, left, right } = self.children.as_mut().unwrap();
+            if split.belongs_to_left(&point) {
+                left.as_mut().append(point, value)?;
+            } else {
+                right.as_mut().append(point, value)?;
             }
         }
 
@@ -197,22 +195,18 @@ where
     pub fn insert(&mut self, point: Point, value: Value) -> Result<()> {
         self.check_point(point.as_ref())?;
 
-        if self.point.is_none() {
+        if self.point.is_none() || self.point.as_ref().unwrap().0 == point {
             self.point = Some((point, vec![value]));
         } else {
-            if self.point.as_ref().unwrap().0 == point {
-                self.point = Some((point, vec![value]));
-            } else {
-                if self.children.is_none() {
-                    self.split();
-                }
+            if self.children.is_none() {
+                self.split();
+            }
 
-                let Children { split, left, right } = self.children.as_mut().unwrap();
-                if split.belongs_to_left(&point) {
-                    left.as_mut().append(point, value)?;
-                } else {
-                    right.as_mut().append(point, value)?;
-                }
+            let Children { split, left, right } = self.children.as_mut().unwrap();
+            if split.belongs_to_left(&point) {
+                left.as_mut().append(point, value)?;
+            } else {
+                right.as_mut().append(point, value)?;
             }
         }
 
