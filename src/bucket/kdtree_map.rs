@@ -61,7 +61,7 @@ where
     }
 
     /// Returns the number of points this kd-tree holds.
-    /// Multiple values on the same point are counted as many.
+    /// Multiple values on the same location are counted as many.
     ///
     /// # Examples
     ///
@@ -319,7 +319,7 @@ where
 
         let mut leaf = self;
         while let Some(Children { split, left, right }) = &leaf.children {
-            if split.belongs_to_left(&query) {
+            if split.belongs_to_left(query) {
                 leaf = left;
             } else {
                 leaf = right;
@@ -386,7 +386,7 @@ where
         let mut leaf = self;
         let mut other_side = vec![];
         while let Some(Children { split, left, right }) = &leaf.children {
-            if split.belongs_to_left(&query) {
+            if split.belongs_to_left(query) {
                 leaf = left;
                 other_side.push(right);
             } else {
@@ -401,8 +401,7 @@ where
                 continue;
             }
 
-            let point_other_side = other_side.nearest_unchecked(query, dist_func);
-            if let Some(point_other_side) = point_other_side {
+            if let Some(point_other_side) = other_side.nearest_unchecked(query, dist_func) {
                 if point_other_side < point_nearest {
                     point_nearest = point_other_side;
                 }
@@ -431,7 +430,7 @@ where
             ref mut right,
         }) = self.children
         {
-            if split.belongs_to_left(&query) {
+            if split.belongs_to_left(query) {
                 left.get_mut_unchecked(query)
             } else {
                 right.get_mut_unchecked(query)
@@ -576,7 +575,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_new_panic_new_zero() {
+    fn test_new_panic_zero_dim() {
         let _: KdTreeMap<R64, [R64; 0], f64> = KdTreeMap::new(0, 1);
     }
 
