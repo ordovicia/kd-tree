@@ -1,4 +1,4 @@
-//! KD-tree implementation with buckets.
+//! KD-Tree implementation with buckets.
 //!
 //! Points are collected in leaf nodes until they overflow from the bucket.
 //! When overflowing, the leaf is divided by the median value of the widest dimension of the

@@ -1,10 +1,3 @@
-// TODO
-//  * factor bucket and trie implementation
-//  * support getting nearest k points
-//  * opt out supporting multi values
-//  * FromIterator
-//  * nearest iterator
-
 //! KD-Tree
 //!
 //! ## Examples
