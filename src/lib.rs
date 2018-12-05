@@ -10,7 +10,7 @@
 //! # extern crate kdtree;
 //! # extern crate noisy_float;
 //! # extern crate num_traits;
-//! use kdtree::bucket::{KdTreeMap, KdTreeSet};
+//! use kdtree::{bucket::{KdTreeMap, KdTreeSet}, PointDist};
 //! use noisy_float::prelude::*;
 //! use num_traits::{Float, Zero};
 //!
@@ -25,7 +25,7 @@
 //! let mut kdtree = KdTreeMap::new(2, 4);
 //!
 //! let p1: [R64; 2] = [r64(1.0), r64(2.0)];
-//! let p2: [R64; 2] = [r64(3.0), r64(1.0)];
+//! let p2: [R64; 2] = [r64(4.0), r64(1.0)];
 //!
 //! kdtree.append(p1, 1.0).unwrap();
 //! kdtree.append(p1, 2.0).unwrap(); // append a value to the existing point
@@ -36,13 +36,13 @@
 //!
 //! assert_eq!(
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
-//!     Some((&p1, &vec![1.0, 2.0]))
+//!     Some(PointDist { point: &p1, value: &vec![1.0, 2.0], dist: r64(2.0) })
 //! );
 //!
 //! kdtree.insert(p1, 4.0).unwrap(); // overwrite existing values
 //! assert_eq!(
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
-//!     Some((&p1, &vec![4.0]))
+//!     Some(PointDist { point: &p1, value: &vec![4.0], dist: r64(2.0) })
 //! );
 //!
 //! // Set
@@ -57,7 +57,7 @@
 //!
 //! assert_eq!(
 //!     kdtree.nearest(&[r64(2.0); 2], &squared_euclidean).unwrap(),
-//!     Some((&p1, 2)) // the found points and their count
+//!     Some(PointDist { point: &p1, value: /* count */ 2, dist: r64(2.0) })
 //! );
 //! ```
 
@@ -66,10 +66,11 @@ extern crate num_traits;
 
 pub mod bucket;
 mod cell;
-mod dist_ordered_point;
 mod error;
+mod point_dist;
 mod split;
 
 pub use error::{Error, ErrorKind};
+pub use point_dist::PointDist;
 
 pub type Result<T> = std::result::Result<T, Error>;

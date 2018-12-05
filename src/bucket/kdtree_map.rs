@@ -2,9 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use num_traits::Float;
 
-use crate::{
-    cell::Cell, dist_ordered_point::DistOrderedPoint, error::ErrorKind, split::Split, Result,
-};
+use crate::{cell::Cell, error::ErrorKind, point_dist::PointDist, split::Split, Result};
 
 #[derive(Debug, Clone)]
 pub struct KdTreeMap<Axis, Point, Value>
@@ -252,7 +250,7 @@ where
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::bucket::KdTreeMap;
+    /// use kdtree::{bucket::KdTreeMap, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -278,54 +276,21 @@ where
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&p1, &squared_euclidean).unwrap(),
-    ///     Some((&p1, &vec![1.0]))
+    ///     Some(PointDist { point: &p1, value: &vec![1.0], dist: r64(0.0) })
     /// );
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&[r64(3.0); 2], &squared_euclidean).unwrap(),
-    ///     Some((&p2, &vec![2.0]))
+    ///     Some(PointDist { point: &p2, value: &vec![2.0], dist: r64(2.0) })
     /// );
     /// ```
     pub fn nearest(
         &self,
         query: &Point,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> Result<Option<(&Point, &Vec<Value>)>> {
+    ) -> Result<Option<PointDist<Axis, &Point, &Vec<Value>>>> {
         self.check_point(query.as_ref())?;
-
-        if self.size() == 0 {
-            return Ok(None);
-        }
-
-        let mut leaf = self;
-        let mut nodes_other_side = vec![];
-        while let Some(Children { split, left, right }) = &leaf.children {
-            if split.belongs_to_left(&query) {
-                leaf = left;
-                nodes_other_side.push(right);
-            } else {
-                leaf = right;
-                nodes_other_side.push(left);
-            }
-        }
-
-        let mut point_nearest = leaf.nearest_point_node(query.as_ref(), dist_func);
-        while let Some(node_other_side) = nodes_other_side.pop() {
-            if node_other_side
-                .cell
-                .dist_to_point(query.as_ref(), dist_func)
-                > point_nearest.dist
-            {
-                continue;
-            }
-
-            let point_nearest_node = node_other_side.nearest_point_node(query.as_ref(), dist_func);
-            if point_nearest_node < point_nearest {
-                point_nearest = point_nearest_node;
-            }
-        }
-
-        Ok(Some(point_nearest.into()))
+        Ok(self.nearest_unchecked(query, dist_func))
     }
 
     /// Returns a reference to the value corresponding to the key.
@@ -409,14 +374,52 @@ where
         Ok(())
     }
 
+    fn nearest_unchecked(
+        &self,
+        query: &Point,
+        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+    ) -> Option<PointDist<Axis, &Point, &Vec<Value>>> {
+        if self.size() == 0 {
+            return None;
+        }
+
+        let mut leaf = self;
+        let mut other_side = vec![];
+        while let Some(Children { split, left, right }) = &leaf.children {
+            if split.belongs_to_left(&query) {
+                leaf = left;
+                other_side.push(right);
+            } else {
+                leaf = right;
+                other_side.push(left);
+            }
+        }
+
+        let mut point_nearest = leaf.nearest_point_node(query.as_ref(), dist_func);
+        while let Some(other_side) = other_side.pop() {
+            if other_side.cell.dist_to_point(query.as_ref(), dist_func) > point_nearest.dist {
+                continue;
+            }
+
+            let point_other_side = other_side.nearest_unchecked(query, dist_func);
+            if let Some(point_other_side) = point_other_side {
+                if point_other_side < point_nearest {
+                    point_nearest = point_other_side;
+                }
+            }
+        }
+
+        Some(point_nearest)
+    }
+
     fn nearest_point_node(
         &self,
         query: &[Axis],
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> DistOrderedPoint<Axis, &Point, &Vec<Value>> {
+    ) -> PointDist<Axis, &Point, &Vec<Value>> {
         self.points
             .iter()
-            .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
+            .map(|(p, v)| PointDist::new(p, v, dist_func(query, p.as_ref())))
             .min()
             .expect("unexpectedly empty points in bucket::KdTreeMap::nearest_point_node()")
     }
@@ -618,7 +621,11 @@ mod tests {
 
         assert_eq!(
             kdtree.nearest(&[r64(1.2); 3], &squared_euclidean).unwrap(),
-            Some((&p1, &vec![1.0, 2.0]))
+            Some(PointDist {
+                point: &p1,
+                value: &vec![1.0, 2.0],
+                dist: r64(0.08),
+            })
         );
     }
 }

@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use num_traits::Float;
 
-use crate::{bucket::kdtree_map::KdTreeMap, Result};
+use crate::{bucket::kdtree_map::KdTreeMap, point_dist::PointDist, Result};
 
 #[derive(Debug, Clone)]
 pub struct KdTreeSet<Axis, Point>
@@ -129,7 +129,7 @@ where
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::bucket::KdTreeSet;
+    /// use kdtree::{bucket::KdTreeSet, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -156,22 +156,26 @@ where
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&p1, &squared_euclidean).unwrap(),
-    ///     Some((&p1, 1))
+    ///     Some(PointDist { point: &p1, value: 1, dist: r64(0.0) })
     /// );
     ///
     /// assert_eq!(
     ///     kdtree.nearest(&[r64(3.0), r64(3.0)], &squared_euclidean).unwrap(),
-    ///     Some((&p2, 2))
+    ///     Some(PointDist { point: &p2, value: 2, dist: r64(2.0) } )
     /// );
     /// ```
     pub fn nearest(
         &self,
         query: &Point,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
-    ) -> Result<Option<(&Point, usize)>> {
-        self.map
-            .nearest(query, dist_func)
-            .map(|pv| pv.map(|(point, values)| (point, values.len())))
+    ) -> Result<Option<PointDist<Axis, &Point, usize>>> {
+        let pd = self.map.nearest(query, dist_func)?;
+        let pd = pd.map(|PointDist { point, value, dist }| PointDist {
+            point,
+            value: value.len(),
+            dist,
+        });
+        Ok(pd)
     }
 }
 
