@@ -1,4 +1,5 @@
 // TODO
+//  * factor implementations of bucket and single-point
 //  * support getting nearest k points
 //  * opt out supporting multi values
 
@@ -65,6 +66,8 @@ extern crate failure;
 extern crate num_traits;
 
 pub mod bucket;
+pub mod single_point;
+
 mod cell;
 mod error;
 mod point_dist;
