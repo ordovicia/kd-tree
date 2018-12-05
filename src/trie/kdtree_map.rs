@@ -456,11 +456,7 @@ where
     }
 
     fn calc_split(&self) -> Split<Axis> {
-        let dim = if self.depth == 0 {
-            0
-        } else {
-            self.dim % self.depth
-        };
+        let dim = self.depth % self.dim;
         let thresh = if let Some((point, _)) = &self.point {
             point.as_ref()[dim]
         } else {
