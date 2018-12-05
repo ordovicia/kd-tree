@@ -114,6 +114,10 @@
 
 extern crate failure;
 extern crate num_traits;
+#[cfg(feature = "serialize")]
+extern crate serde;
+#[cfg(feature = "serialize")]
+extern crate serde_derive;
 
 pub mod bucket;
 pub mod trie;

@@ -119,6 +119,15 @@ assert_eq!(
 );
 ```
 
+## Features
+
+* `serialize` for serializing/deserializing `trie::KdTree{Map,Set}`
+
+```rust
+let ser = serde_json::to_string(&kdtree).unwrap();
+let _: trie::KdTreeMap<_, _, _> = serde_json::from_str(&ser).unwrap();
+```
+
 ## Related Project
 
 The implementation is inspired by [mrhooray/kdtree](https://github.com/mrhooray/kdtree-rs).

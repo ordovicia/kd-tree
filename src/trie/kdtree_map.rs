@@ -1,8 +1,11 @@
 use num_traits::Float;
+#[cfg(feature = "serialize")]
+use serde_derive::{Deserialize, Serialize};
 
 use crate::{cell::Cell, error::ErrorKind, point_dist::PointDist, split::Split, Result};
 
-#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct KdTreeMap<Axis, Point, Value>
 where
     Axis: Float,
@@ -17,8 +20,9 @@ where
     cell: Cell<Axis>,
 }
 
-#[derive(Debug, Clone)]
-struct Children<Axis, KdTree> {
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
+struct Children<Axis: Clone, KdTree> {
     split: Split<Axis>,
     left: Box<KdTree>,
     right: Box<KdTree>,

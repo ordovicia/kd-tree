@@ -1,8 +1,11 @@
 use num_traits::Float;
+#[cfg(feature = "serialize")]
+use serde_derive::{Deserialize, Serialize};
 
 use crate::{point_dist::PointDist, trie::kdtree_map::KdTreeMap, Result};
 
-#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct KdTreeSet<Axis, Point>
 where
     Axis: Float,

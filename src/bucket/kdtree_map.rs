@@ -4,7 +4,7 @@ use num_traits::Float;
 
 use crate::{cell::Cell, error::ErrorKind, point_dist::PointDist, split::Split, Result};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct KdTreeMap<Axis, Point, Value>
 where
     Axis: Ord + Float,
@@ -19,8 +19,8 @@ where
     cell: Cell<Axis>,
 }
 
-#[derive(Debug, Clone)]
-struct Children<Axis, KdTree> {
+#[derive(Clone, Debug)]
+struct Children<Axis: Clone, KdTree> {
     split: Split<Axis>,
     left: Box<KdTree>,
     right: Box<KdTree>,

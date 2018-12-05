@@ -1,6 +1,10 @@
+#[cfg(feature = "serialize")]
+use serde_derive::{Deserialize, Serialize};
+
 use crate::split::Split;
 
-#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Cell<Axis: Clone> {
     min: Vec<Option<Axis>>,
     max: Vec<Option<Axis>>,

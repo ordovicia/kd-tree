@@ -4,7 +4,7 @@ use num_traits::Float;
 
 use crate::{bucket::kdtree_map::KdTreeMap, point_dist::PointDist, Result};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct KdTreeSet<Axis, Point>
 where
     Axis: Ord + Float,

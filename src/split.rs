@@ -1,21 +1,19 @@
-#[derive(Debug)]
-pub struct Split<Axis> {
+#[cfg(feature = "serialize")]
+use serde_derive::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Split<Axis: Clone> {
     pub dim: usize,
     pub thresh: Axis,
 }
 
-impl<Axis: PartialOrd> Split<Axis> {
+impl<Axis> Split<Axis>
+where
+    Axis: Clone + PartialOrd,
+{
     pub fn belongs_to_left<Point: AsRef<[Axis]>>(&self, point: &Point) -> bool {
         let point = point.as_ref();
         point[self.dim] < self.thresh
-    }
-}
-
-impl<Axis: Clone> Clone for Split<Axis> {
-    fn clone(&self) -> Self {
-        Self {
-            dim: self.dim,
-            thresh: self.thresh.clone(),
-        }
     }
 }
