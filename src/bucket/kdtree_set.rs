@@ -177,6 +177,34 @@ where
         });
         Ok(pd)
     }
+
+    /// Returns the number of the query point in this kd-tree.
+    ///
+    /// Returns `Err` when the number of dimension of the point does not match with that of this
+    /// tree, or when the location of the point is not finite.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # extern crate kdtree;
+    /// # extern crate noisy_float;
+    /// use kdtree::bucket::KdTreeSet;
+    /// use noisy_float::prelude::*;
+    ///
+    /// let mut kdtree = KdTreeSet::new(2, 1);
+    /// let p1: [R64; 2] = [r64(1.0); 2];
+    ///
+    /// kdtree.append(p1).unwrap();
+    /// kdtree.append(p1).unwrap();
+    /// assert_eq!(kdtree.get_count(&p1).unwrap(), 2);
+    ///
+    /// assert_eq!(kdtree.get_count(&[r64(2.0); 2]).unwrap(), 0);
+    /// ```
+    pub fn get_count(&self, query: &Point) -> Result<usize> {
+        let values = self.map.get(query)?;
+        let count = values.map(|values| values.len()).unwrap_or(0);
+        Ok(count)
+    }
 }
 
 impl<Axis, Point> KdTreeSet<Axis, Point>
