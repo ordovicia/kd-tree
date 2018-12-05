@@ -1,4 +1,8 @@
-//! # Kd-tree
+// TODO
+//  * support getting nearest k points
+//  * opt out supporting multi values
+
+//! # KD-tree
 //!
 //! ## Examples
 //!
@@ -6,7 +10,7 @@
 //! # extern crate kdtree;
 //! # extern crate noisy_float;
 //! # extern crate num_traits;
-//! use kdtree::{KdTreeMap, KdTreeSet};
+//! use kdtree::bucket::{KdTreeMap, KdTreeSet};
 //! use noisy_float::prelude::*;
 //! use num_traits::{Float, Zero};
 //!
@@ -60,15 +64,12 @@
 extern crate failure;
 extern crate num_traits;
 
+pub mod bucket;
 mod cell;
 mod dist_ordered_point;
 mod error;
-mod kdtree_map;
-mod kdtree_set;
 mod split;
 
 pub use error::{Error, ErrorKind};
-pub use kdtree_map::KdTreeMap;
-pub use kdtree_set::KdTreeSet;
 
 pub type Result<T> = std::result::Result<T, Error>;

@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use num_traits::Float;
 
-use crate::{kdtree_map::KdTreeMap, Result};
+use crate::{bucket::kdtree_map::KdTreeMap, Result};
 
 #[derive(Debug, Clone)]
 pub struct KdTreeSet<Axis, Point>
@@ -19,14 +19,14 @@ where
     Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
 {
     /// Creates a kd-tree with `dim` dimensions.
-    /// Every node in the tree can have up to `node_capacity` points.
+    /// Every node in the tree can have up to `bucket_size` points.
     ///
     /// # Panic
     ///
-    /// Panics if neither `dim` nor `node_capacity` is positive.
-    pub fn new(dim: usize, node_capacity: usize) -> Self {
+    /// Panics if neither `dim` nor `bucket_size` is positive.
+    pub fn new(dim: usize, bucket_size: usize) -> Self {
         Self {
-            map: KdTreeMap::new(dim, node_capacity),
+            map: KdTreeMap::new(dim, bucket_size),
         }
     }
 
@@ -35,9 +35,9 @@ where
         self.map.dim()
     }
 
-    /// Returns the node capacity of this kd-tree.
-    pub fn node_capacity(&self) -> usize {
-        self.map.node_capacity()
+    /// Returns the bucket size of this kd-tree.
+    pub fn bucket_size(&self) -> usize {
+        self.map.bucket_size()
     }
 
     /// Returns the number of points this kd-tree holds.
@@ -48,7 +48,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeSet;
+    /// use kdtree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -74,7 +74,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeSet;
+    /// use kdtree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -104,7 +104,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeSet;
+    /// use kdtree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);
@@ -115,8 +115,6 @@ where
         self.map.append(point, ())
     }
 
-    // TODO: support getting nearest N points
-    //
     /// Returns the nearest point from the query point, and the number of the found point.
     /// The distance between two points are calculated with `dist_func` function.
     ///
@@ -131,7 +129,7 @@ where
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::KdTreeSet;
+    /// use kdtree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -190,7 +188,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeSet;
+    /// use kdtree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeSet::new(2, 1);

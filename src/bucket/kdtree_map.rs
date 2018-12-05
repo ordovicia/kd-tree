@@ -13,7 +13,7 @@ where
     Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
 {
     dim: usize,
-    node_capacity: usize,
+    bucket_size: usize,
 
     points: HashMap<Point, Vec<Value>>,
     children: Option<Children<Axis, KdTreeMap<Axis, Point, Value>>>,
@@ -34,18 +34,18 @@ where
     Point: AsRef<[Axis]> + PartialEq + Eq + Hash,
 {
     /// Creates a kd-tree with `dim` dimensions.
-    /// Every node in the tree can have up to `node_capacity` points.
+    /// Every node in the tree can have up to `bucket_size` points.
     ///
     /// # Panic
     ///
-    /// Panics if neither `dim` nor `node_capacity` is positive.
-    pub fn new(dim: usize, node_capacity: usize) -> Self {
+    /// Panics if neither `dim` nor `bucket_size` is positive.
+    pub fn new(dim: usize, bucket_size: usize) -> Self {
         assert!(dim > 0, "the number of dimensions must be positive");
-        assert!(node_capacity > 0, "node capacity must be positive");
+        assert!(bucket_size > 0, "bucket size must be positive");
 
         Self {
             dim,
-            node_capacity,
+            bucket_size,
             points: HashMap::new(),
             children: None,
             cell: Cell::new(dim),
@@ -57,9 +57,9 @@ where
         self.dim
     }
 
-    /// Returns the node capacity of this kd-tree.
-    pub fn node_capacity(&self) -> usize {
-        self.node_capacity
+    /// Returns the bucket size of this kd-tree.
+    pub fn bucket_size(&self) -> usize {
+        self.bucket_size
     }
 
     /// Returns the number of points this kd-tree holds.
@@ -70,7 +70,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -108,7 +108,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -150,13 +150,16 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
     ///
-    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
-    /// kdtree.append(p1, val).unwrap();
+    /// let p1 = [r64(1.0); 2];
+    /// kdtree.append(p1, 1.0).unwrap();
+    /// kdtree.append(p1, 2.0).unwrap();
+    ///
+    /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![1.0, 2.0]));
     /// ```
     pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
         // #![allow(clippy::map_entry)]
@@ -178,7 +181,7 @@ where
             }
         } else {
             self.points.insert(point, vec![value]);
-            if self.points.len() > self.node_capacity() {
+            if self.points.len() > self.bucket_size() {
                 self.split();
             }
         }
@@ -198,13 +201,16 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
     ///
-    /// let (p1, val): ([R64; 2], f64) = ([r64(1.0); 2], 1.0);
-    /// kdtree.insert(p1, val).unwrap();
+    /// let p1 = [r64(1.0); 2];
+    /// kdtree.insert(p1, 1.0).unwrap();
+    /// kdtree.insert(p1, 2.0).unwrap();
+    ///
+    /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![2.0]));
     /// ```
     pub fn insert(&mut self, point: Point, value: Value) -> Result<()> {
         // #![allow(clippy::map_entry)]
@@ -224,7 +230,7 @@ where
             }
         } else {
             self.points.insert(point, vec![value]);
-            if self.points.len() > self.node_capacity {
+            if self.points.len() > self.bucket_size {
                 self.split();
             }
         }
@@ -232,8 +238,6 @@ where
         Ok(())
     }
 
-    // TODO: support getting nearest N points
-    //
     /// Returns the nearest point from the query point.
     /// The distance between two points are calculated with `dist_func` function.
     ///
@@ -248,7 +252,7 @@ where
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
     /// # extern crate num_traits;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
     ///
@@ -278,7 +282,7 @@ where
     /// );
     ///
     /// assert_eq!(
-    ///     kdtree.nearest(&[r64(3.0), r64(3.0)], &squared_euclidean).unwrap(),
+    ///     kdtree.nearest(&[r64(3.0); 2], &squared_euclidean).unwrap(),
     ///     Some((&p2, &vec![2.0]))
     /// );
     /// ```
@@ -312,7 +316,7 @@ where
                 .dist_to_point(query.as_ref(), dist_func)
                 > point_nearest.dist
             {
-                break;
+                continue;
             }
 
             let point_nearest_node = node_other_side.nearest_point_node(query.as_ref(), dist_func);
@@ -334,7 +338,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -370,7 +374,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -381,7 +385,7 @@ where
     /// *kdtree.get_mut(&p1).unwrap().unwrap() = vec![2.0];
     /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![2.0]));
     ///
-    /// assert_eq!(kdtree.get(&[r64(2.0); 2]).unwrap(), None);
+    /// assert_eq!(kdtree.get_mut(&[r64(2.0); 2]).unwrap(), None);
     /// ```
     pub fn get_mut(&mut self, query: &Point) -> Result<Option<&mut Vec<Value>>> {
         self.check_point(query.as_ref())?;
@@ -414,7 +418,7 @@ where
             .iter()
             .map(|(p, v)| DistOrderedPoint::new(p, v, dist_func(query, p.as_ref())))
             .min()
-            .expect("unexpectedly empty points in KdTreeMap::nearest_point_node()")
+            .expect("unexpectedly empty points in bucket::KdTreeMap::nearest_point_node()")
     }
 
     fn get_mut_unchecked(&mut self, query: &Point) -> Option<&mut Vec<Value>> {
@@ -437,7 +441,7 @@ where
     fn split(&mut self) {
         let split = self.calc_split();
 
-        let (bound_left, bound_right) = self.cell.split(&split);
+        let (cell_left, cell_right) = self.cell.split(&split);
 
         let (mut points_left, mut points_right) = (HashMap::new(), HashMap::new());
         for (point, values) in self.points.drain() {
@@ -450,17 +454,17 @@ where
 
         self.children = Some(Children {
             split,
-            left: Box::new(KdTreeMap::with_points_bound(
+            left: Box::new(KdTreeMap::with_points_cell(
                 self.dim,
-                self.node_capacity,
+                self.bucket_size,
                 points_left,
-                bound_left,
+                cell_left,
             )),
-            right: Box::new(KdTreeMap::with_points_bound(
+            right: Box::new(KdTreeMap::with_points_cell(
                 self.dim,
-                self.node_capacity,
+                self.bucket_size,
                 points_right,
-                bound_right,
+                cell_right,
             )),
         });
     }
@@ -471,7 +475,7 @@ where
                 let (width, median) = self.bounding_width_median(dim);
                 (dim, width, median)
             }).max_by_key(|(_, width, _)| *width)
-            .expect("unexpectedly zero dimension in KdTreeMap::calc_split()");
+            .expect("unexpectedly zero dimension in bucket::KdTreeMap::calc_split()");
 
         Split { dim, thresh }
     }
@@ -482,7 +486,7 @@ where
         let min = points
             .clone()
             .min()
-            .expect("unexpectedly empty points in KdTreeMap:bounding_width_median()");
+            .expect("unexpectedly empty points in bucket::KdTreeMap:bounding_width_median()");
         let max = points.max().unwrap();
 
         let width = max - min;
@@ -490,15 +494,15 @@ where
         (width, median)
     }
 
-    fn with_points_bound(
+    fn with_points_cell(
         dim: usize,
-        node_capacity: usize,
+        bucket_size: usize,
         points: HashMap<Point, Vec<Value>>,
         cell: Cell<Axis>,
     ) -> Self {
         Self {
             dim,
-            node_capacity,
+            bucket_size,
             points,
             children: None,
             cell,
@@ -520,7 +524,7 @@ where
     /// ```rust
     /// # extern crate kdtree;
     /// # extern crate noisy_float;
-    /// use kdtree::KdTreeMap;
+    /// use kdtree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
     /// let mut kdtree = KdTreeMap::new(2, 1);
@@ -575,20 +579,20 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_new_panic_zero_capacity() {
+    fn test_new_panic_zero_bucket_size() {
         let _: KdTreeMap<R64, [R64; 2], f64> = KdTreeMap::new(2, 0);
-    }
-
-    #[test]
-    fn test_insert_err_dim() {
-        let mut kdtree = KdTreeMap::new(2, 1);
-        assert!(kdtree.insert([r64(1.0); 1], 0.0).is_err());
     }
 
     #[test]
     fn test_append_err_dim() {
         let mut kdtree = KdTreeMap::new(2, 1);
         assert!(kdtree.append([r64(1.0); 1], 0.0).is_err());
+    }
+
+    #[test]
+    fn test_insert_err_dim() {
+        let mut kdtree = KdTreeMap::new(2, 1);
+        assert!(kdtree.insert([r64(1.0); 1], 0.0).is_err());
     }
 
     #[test]
