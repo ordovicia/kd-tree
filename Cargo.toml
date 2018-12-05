@@ -10,3 +10,4 @@ num-traits = "0.2.6"
 [dev-dependencies]
 noisy_float = "0.1.8"
 ordered-float = "1.0.1"
+rand = "0.6.1"
