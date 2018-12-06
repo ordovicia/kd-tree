@@ -17,4 +17,4 @@ rand = "0.6.1"
 serde_json = "1.0.33"
 
 [features]
-serialize = ["serde", "serde_derive", "noisy_float/serde-1"]
+serialize = ["serde", "serde_derive"]
