@@ -279,7 +279,7 @@ where
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Result<Option<PointDist<Axis, &Point, &Vec<Value>>>> {
         self.check_point(query.as_ref())?;
-        Ok(self.nearest_unchecked(query, dist_func))
+        Ok(self.nearest_rec(query, None, dist_func))
     }
 
     /// Returns a reference to the value corresponding to the key.
@@ -359,13 +359,20 @@ where
         Ok(())
     }
 
-    fn nearest_unchecked(
+    fn nearest_rec(
         &self,
         query: &Point,
+        mut dist_min: Option<Axis>,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Option<PointDist<Axis, &Point, &Vec<Value>>> {
         if self.size() == 0 {
             return None;
+        }
+
+        if let Some(dist_min) = dist_min {
+            if self.cell.dist_to_point(query.as_ref(), dist_func) > dist_min {
+                return None;
+            }
         }
 
         let mut leaf = self;
@@ -381,13 +388,16 @@ where
         }
 
         let mut point_nearest = leaf.nearest_point_node(query.as_ref(), dist_func);
-        while let Some(other_side) = other_side.pop() {
-            if other_side.cell.dist_to_point(query.as_ref(), dist_func) > point_nearest.dist {
-                continue;
-            }
+        if let Some(dm) = dist_min {
+            dist_min = Some(std::cmp::min(dm, point_nearest.dist));
+        } else {
+            dist_min = Some(point_nearest.dist);
+        }
 
-            if let Some(point_other_side) = other_side.nearest_unchecked(query, dist_func) {
-                if point_other_side < point_nearest {
+        while let Some(other_side) = other_side.pop() {
+            if let Some(point_other_side) = other_side.nearest_rec(query, dist_min, dist_func) {
+                if point_other_side.dist < dist_min.unwrap() {
+                    dist_min = Some(point_other_side.dist);
                     point_nearest = point_other_side;
                 }
             }

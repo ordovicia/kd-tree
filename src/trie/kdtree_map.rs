@@ -262,7 +262,7 @@ where
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Result<Option<PointDist<Axis, &Point, &Vec<Value>>>> {
         self.check_point(query.as_ref())?;
-        Ok(self.nearest_unchecked(query, dist_func))
+        Ok(self.nearest_rec(query, None, dist_func))
     }
 
     /// Returns a reference to the value corresponding to the key.
@@ -350,13 +350,20 @@ where
         Ok(())
     }
 
-    fn nearest_unchecked(
+    fn nearest_rec(
         &self,
         query: &Point,
+        mut dist_min: Option<Axis>,
         dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Option<PointDist<Axis, &Point, &Vec<Value>>> {
         if self.size() == 0 {
             return None;
+        }
+
+        if let Some(dist_min) = dist_min {
+            if self.cell.dist_to_point(query.as_ref(), dist_func) > dist_min {
+                return None;
+            }
         }
 
         let mut point_nearest = None;
@@ -369,7 +376,12 @@ where
                 value,
                 dist: dist_func(query.as_ref(), point.as_ref()),
             };
-            if point_nearest.as_ref().map(|pn| &pd < pn).unwrap_or(true) {
+
+            if let Some(pn) = &point_nearest {
+                if &pd < pn {
+                    point_nearest = Some(pd);
+                }
+            } else {
                 point_nearest = Some(pd);
             }
 
@@ -386,27 +398,25 @@ where
             }
         }
 
-        while let Some(other_side) = other_side.pop() {
-            if point_nearest
-                .as_ref()
-                .map(|pn| other_side.cell.dist_to_point(query.as_ref(), dist_func) > pn.dist)
-                .unwrap_or(false)
-            {
-                continue;
+        let mut point_nearest = point_nearest.unwrap();
+        if let Some(dm) = dist_min {
+            if point_nearest.dist < dm {
+                dist_min = Some(point_nearest.dist);
             }
+        } else {
+            dist_min = Some(point_nearest.dist);
+        }
 
-            if let Some(point_other_side) = other_side.nearest_unchecked(query, dist_func) {
-                if point_nearest
-                    .as_ref()
-                    .map(|pn| &point_other_side < pn)
-                    .unwrap_or(true)
-                {
-                    point_nearest = Some(point_other_side);
+        while let Some(other_side) = other_side.pop() {
+            if let Some(point_other_side) = other_side.nearest_rec(query, dist_min, dist_func) {
+                if point_other_side.dist < dist_min.unwrap() {
+                    dist_min = Some(point_other_side.dist);
+                    point_nearest = point_other_side;
                 }
             }
         }
 
-        point_nearest
+        Some(point_nearest)
     }
 
     fn get_mut_unchecked(&mut self, query: &Point) -> Option<&mut Vec<Value>> {
