@@ -11,10 +11,6 @@ fn squared_euclidean<T: Float>(p1: &[T], p2: &[T]) -> T {
         .fold(T::zero(), std::ops::Add::add)
 }
 
-fn gen_rand<T: SampleUniform>(begin: T, end: T) -> T {
-    rand::thread_rng().gen_range(begin, end)
-}
-
 fn nearest_linear<'a, A, P>(query: &P, points: &'a [P], dist_func: &Fn(&[A], &[A]) -> A) -> &'a P
 where
     A: Float,
@@ -38,226 +34,116 @@ where
     nearest
 }
 
-#[test]
-fn test_bucket_nearest_map_dim2_bucket1_points1024() {
-    const POINTS_NUM: usize = 1024;
+fn gen_rand<T: SampleUniform>(begin: T, end: T) -> T {
+    rand::thread_rng().gen_range(begin, end)
+}
 
-    const DIM: usize = 2;
-    const BUCKET_SIZE: usize = 1;
+fn gen_points(dim: usize, num: usize) -> Vec<Vec<f64>> {
+    (0..num)
+        .map(|_| (0..dim).map(|_| gen_rand(-1.0, 1.0)).collect())
+        .collect()
+}
 
-    let mut kdtree = bucket::KdTreeMap::new(DIM, BUCKET_SIZE);
-    let points = (0..POINTS_NUM)
-        .map(|_| [r64(gen_rand(-1.0, 1.0)), r64(gen_rand(-1.0, 1.0))])
-        .collect::<Vec<[R64; DIM]>>();
+fn gen_points_noisy(dim: usize, num: usize) -> Vec<Vec<R64>> {
+    (0..num)
+        .map(|_| (0..dim).map(|_| r64(gen_rand(-1.0, 1.0))).collect())
+        .collect()
+}
+
+macro_rules! assert_nearest {
+    ($kdtree: expr, $points: expr, $queries: expr) => {
+        for q in &$queries {
+            let nearest = $kdtree.nearest(q, &squared_euclidean).unwrap().unwrap();
+            let linear = nearest_linear(q, &$points, &squared_euclidean);
+            assert_eq!(nearest.point, linear);
+        }
+    };
+}
+
+fn assert_nearest_bucket_map(dim: usize, bucket_size: usize, points_num: usize) {
+    let mut kdtree = bucket::KdTreeMap::new(dim, bucket_size);
+    let points = gen_points_noisy(dim, points_num);
 
     for p in points.clone() {
         kdtree.append(p, gen_rand(0, 10)).unwrap();
     }
 
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+    assert_eq!(kdtree.size(), points_num);
+    assert_nearest!(kdtree, points, gen_points_noisy(dim, points_num));
 }
 
-#[test]
-fn test_bucket_nearest_map_dim3_bucket4_points1024() {
-    const POINTS_NUM: usize = 1024;
+fn assert_nearest_bucket_set(dim: usize, bucket_size: usize, points_num: usize) {
+    let mut kdtree = bucket::KdTreeSet::new(dim, bucket_size);
+    let points = gen_points_noisy(dim, points_num);
 
-    const DIM: usize = 3;
-    const BUCKET_SIZE: usize = 4;
+    for p in points.clone() {
+        kdtree.append(p).unwrap();
+    }
 
-    let mut kdtree = bucket::KdTreeMap::new(DIM, BUCKET_SIZE);
-    let points = (0..POINTS_NUM)
-        .map(|_| {
-            [
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-            ]
-        })
-        .collect::<Vec<[R64; DIM]>>();
+    assert_eq!(kdtree.size(), points_num);
+    assert_nearest!(kdtree, points, gen_points_noisy(dim, points_num));
+}
+
+fn assert_nearest_trie_map(dim: usize, points_num: usize) {
+    let mut kdtree = trie::KdTreeMap::new(dim);
+    let points = gen_points(dim, points_num);
 
     for p in points.clone() {
         kdtree.append(p, gen_rand(0, 10)).unwrap();
     }
 
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+    assert_eq!(kdtree.size(), points_num);
+    assert_nearest!(kdtree, points, gen_points(dim, points_num));
 }
 
-#[test]
-fn test_bucket_nearest_set_dim2_bucket1_points1024() {
-    const POINTS_NUM: usize = 1024;
-
-    const DIM: usize = 2;
-    const BUCKET_SIZE: usize = 1;
-
-    let mut kdtree = bucket::KdTreeSet::new(DIM, BUCKET_SIZE);
-    let points = (0..POINTS_NUM)
-        .map(|_| [r64(gen_rand(-1.0, 1.0)), r64(gen_rand(-1.0, 1.0))])
-        .collect::<Vec<[R64; DIM]>>();
+fn assert_nearest_trie_set(dim: usize, points_num: usize) {
+    let mut kdtree = trie::KdTreeSet::new(dim);
+    let points = gen_points(dim, points_num);
 
     for p in points.clone() {
         kdtree.append(p).unwrap();
     }
 
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+    assert_eq!(kdtree.size(), points_num);
+    assert_nearest!(kdtree, points, gen_points(dim, points_num));
 }
 
 #[test]
-fn test_bucket_nearest_set_dim3_bucket4_points1024() {
-    const POINTS_NUM: usize = 1024;
-
-    const DIM: usize = 3;
-    const BUCKET_SIZE: usize = 4;
-
-    let mut kdtree = bucket::KdTreeSet::new(DIM, BUCKET_SIZE);
-    let points = (0..POINTS_NUM)
-        .map(|_| {
-            [
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-            ]
-        })
-        .collect::<Vec<[R64; DIM]>>();
-
-    for p in points.clone() {
-        kdtree.append(p).unwrap();
-    }
-
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+fn test_nearest_bucket_map_dim2_bucket1_points1024() {
+    assert_nearest_bucket_map(2, 1, 1024);
 }
 
 #[test]
-fn test_trie_nearest_map_dim2_points1024() {
-    const POINTS_NUM: usize = 1024;
-    const DIM: usize = 2;
-
-    let mut kdtree = trie::KdTreeMap::new(DIM);
-    let points = (0..POINTS_NUM)
-        .map(|_| [r64(gen_rand(-1.0, 1.0)), r64(gen_rand(-1.0, 1.0))])
-        .collect::<Vec<[R64; DIM]>>();
-
-    for p in points.clone() {
-        kdtree.append(p, gen_rand(0, 10)).unwrap();
-    }
-
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+fn test_nearest_bucket_map_dim3_bucket4_points1024() {
+    assert_nearest_bucket_map(3, 4, 1024);
 }
 
 #[test]
-fn test_trie_nearest_map_dim3_points1024() {
-    const POINTS_NUM: usize = 1024;
-    const DIM: usize = 3;
-
-    let mut kdtree = trie::KdTreeMap::new(DIM);
-    let points = (0..POINTS_NUM)
-        .map(|_| {
-            [
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-            ]
-        })
-        .collect::<Vec<[R64; DIM]>>();
-
-    for p in points.clone() {
-        kdtree.append(p, gen_rand(0, 10)).unwrap();
-    }
-
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+fn test_nearest_bucket_set_dim2_bucket1_points1024() {
+    assert_nearest_bucket_set(2, 1, 1024)
 }
 
 #[test]
-fn test_trie_nearest_set_dim2_points1024() {
-    const POINTS_NUM: usize = 1024;
-    const DIM: usize = 2;
-
-    let mut kdtree = trie::KdTreeSet::new(DIM);
-    let points = (0..POINTS_NUM)
-        .map(|_| [r64(gen_rand(-1.0, 1.0)), r64(gen_rand(-1.0, 1.0))])
-        .collect::<Vec<[R64; DIM]>>();
-
-    for p in points.clone() {
-        kdtree.append(p).unwrap();
-    }
-
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+fn test_nearest_bucket_set_dim3_bucket4_points1024() {
+    assert_nearest_bucket_set(3, 4, 1024)
 }
 
 #[test]
-fn test_trie_nearest_set_dim3_points1024() {
-    const POINTS_NUM: usize = 1024;
-    const DIM: usize = 3;
+fn test_nearest_trie_map_dim2_points1024() {
+    assert_nearest_trie_map(2, 1024);
+}
 
-    let mut kdtree = trie::KdTreeSet::new(DIM);
-    let points = (0..POINTS_NUM)
-        .map(|_| {
-            [
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-                r64(gen_rand(-1.0, 1.0)),
-            ]
-        })
-        .collect::<Vec<[R64; DIM]>>();
+#[test]
+fn test_nearest_trie_map_dim3_points1024() {
+    assert_nearest_trie_map(3, 1024);
+}
 
-    for p in points.clone() {
-        kdtree.append(p).unwrap();
-    }
+#[test]
+fn test_nearest_trie_set_dim2_points1024() {
+    assert_nearest_trie_set(2, 1024);
+}
 
-    assert_eq!(kdtree.size(), POINTS_NUM);
-
-    for p in &points {
-        let nearest = kdtree.nearest(p, &squared_euclidean).unwrap().unwrap();
-        let linear = nearest_linear(p, &points, &squared_euclidean);
-
-        assert_eq!(nearest.point, linear);
-    }
+#[test]
+fn test_nearest_trie_set_dim3_points1024() {
+    assert_nearest_trie_set(3, 1024);
 }
