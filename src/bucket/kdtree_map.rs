@@ -588,35 +588,4 @@ mod tests {
         let mut kdtree = KdTreeMap::new(2, 1);
         assert!(kdtree.insert([r64(1.0); 1], 0.0).is_err());
     }
-
-    #[test]
-    fn test_nearest_3d() {
-        use num_traits::Zero;
-
-        let squared_euclidean = |p1: &[R64], p2: &[R64]| -> R64 {
-            p1.iter()
-                .zip(p2.iter())
-                .map(|(&p1, &p2)| (p1 - p2) * (p1 - p2))
-                .fold(R64::zero(), std::ops::Add::add)
-        };
-
-        let mut kdtree = KdTreeMap::new(3, 2);
-
-        let p1: [R64; 3] = [r64(1.0); 3];
-        let p2: [R64; 3] = [r64(2.0); 3];
-
-        kdtree.append(p1, 1.0).unwrap();
-        kdtree.append(p1, 2.0).unwrap();
-
-        kdtree.append(p2, 3.0).unwrap();
-
-        assert_eq!(
-            kdtree.nearest(&[r64(1.2); 3], &squared_euclidean).unwrap(),
-            Some(PointDist {
-                point: &p1,
-                value: &vec![1.0, 2.0],
-                dist: r64(0.08),
-            })
-        );
-    }
 }

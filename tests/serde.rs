@@ -1,4 +1,3 @@
-
 use rand::{distributions::uniform::SampleUniform, Rng};
 
 use kd_tree::trie;

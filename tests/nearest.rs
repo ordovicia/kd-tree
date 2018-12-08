@@ -109,23 +109,38 @@ fn assert_nearest_trie_set(dim: usize, points_num: usize) {
 }
 
 #[test]
-fn test_nearest_bucket_map_dim2_bucket1_points1024() {
-    assert_nearest_bucket_map(2, 1, 1024);
+fn test_nearest_bucket_map_dim1_bucket1_points1024() {
+    assert_nearest_bucket_map(1, 1, 1024);
 }
 
 #[test]
-fn test_nearest_bucket_map_dim3_bucket4_points1024() {
-    assert_nearest_bucket_map(3, 4, 1024);
+fn test_nearest_bucket_map_dim2_bucket4_points1024() {
+    assert_nearest_bucket_map(2, 4, 1024);
 }
 
 #[test]
-fn test_nearest_bucket_set_dim2_bucket1_points1024() {
-    assert_nearest_bucket_set(2, 1, 1024)
+fn test_nearest_bucket_map_dim3_bucket16_points1024() {
+    assert_nearest_bucket_map(3, 16, 1024);
 }
 
 #[test]
-fn test_nearest_bucket_set_dim3_bucket4_points1024() {
-    assert_nearest_bucket_set(3, 4, 1024)
+fn test_nearest_bucket_set_dim1_bucket1_points1024() {
+    assert_nearest_bucket_set(1, 1, 1024)
+}
+
+#[test]
+fn test_nearest_bucket_set_dim2_bucket4_points1024() {
+    assert_nearest_bucket_set(2, 4, 1024)
+}
+
+#[test]
+fn test_nearest_bucket_set_dim3_bucket16_points1024() {
+    assert_nearest_bucket_set(3, 16, 1024)
+}
+
+#[test]
+fn test_nearest_trie_map_dim1_points1024() {
+    assert_nearest_trie_map(1, 1024);
 }
 
 #[test]
@@ -136,6 +151,11 @@ fn test_nearest_trie_map_dim2_points1024() {
 #[test]
 fn test_nearest_trie_map_dim3_points1024() {
     assert_nearest_trie_map(3, 1024);
+}
+
+#[test]
+fn test_nearest_trie_set_dim1_points1024() {
+    assert_nearest_trie_set(1, 1024);
 }
 
 #[test]

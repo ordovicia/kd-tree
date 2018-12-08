@@ -554,33 +554,4 @@ mod tests {
         let mut kdtree = KdTreeMap::new(2);
         assert!(kdtree.insert([1.0; 1], 0.0).is_err());
     }
-
-    #[test]
-    fn test_nearest_3d() {
-        let squared_euclidean = |p1: &[f64], p2: &[f64]| -> f64 {
-            p1.iter()
-                .zip(p2.iter())
-                .map(|(&p1, &p2)| (p1 - p2) * (p1 - p2))
-                .sum()
-        };
-
-        let mut kdtree = KdTreeMap::new(3);
-
-        let p1 = [1.0; 3];
-        let p2 = [2.0; 3];
-
-        kdtree.append(p1, 1.0).unwrap();
-        kdtree.append(p1, 2.0).unwrap();
-
-        kdtree.append(p2, 3.0).unwrap();
-
-        assert_eq!(
-            kdtree.nearest(&[1.2; 3], &squared_euclidean).unwrap(),
-            Some(PointDist {
-                point: &p1,
-                value: &vec![1.0, 2.0],
-                dist: 0.08,
-            })
-        );
-    }
 }
