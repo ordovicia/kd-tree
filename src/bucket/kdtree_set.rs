@@ -46,8 +46,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
@@ -72,8 +70,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
@@ -102,8 +98,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
@@ -126,9 +120,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
-    /// # extern crate num_traits;
     /// use kd_tree::{bucket::KdTreeSet, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
@@ -186,8 +177,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///
@@ -218,8 +207,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeSet;
     /// use noisy_float::prelude::*;
     ///

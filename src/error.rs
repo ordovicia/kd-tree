@@ -11,8 +11,7 @@ pub struct Error {
 pub enum ErrorKind {
     #[fail(
         display = "dimension does not match (expected: {}, actual, {})",
-        expected,
-        actual
+        expected, actual
     )]
     DimensionNotMatch { expected: usize, actual: usize },
 

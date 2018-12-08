@@ -66,8 +66,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -104,8 +102,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -146,8 +142,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -160,7 +154,7 @@ where
     /// assert_eq!(kdtree.get(&p1).unwrap(), Some(&vec![1.0, 2.0]));
     /// ```
     pub fn append(&mut self, point: Point, value: Value) -> Result<()> {
-        // #![allow(clippy::map_entry)]
+        #![allow(clippy::map_entry)]
 
         self.check_point(point.as_ref())?;
 
@@ -197,8 +191,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -247,9 +239,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
-    /// # extern crate num_traits;
     /// use kd_tree::{bucket::KdTreeMap, PointDist};
     /// use noisy_float::prelude::*;
     /// use num_traits::{Float, Zero};
@@ -301,8 +290,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -337,8 +324,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -476,7 +461,8 @@ where
             .map(|dim| {
                 let (width, median) = self.bounding_width_median(dim);
                 (dim, width, median)
-            }).max_by_key(|(_, width, _)| *width)
+            })
+            .max_by_key(|(_, width, _)| *width)
             .expect("unexpectedly zero dimension in bucket::KdTreeMap::calc_split()");
 
         Split { dim, thresh }
@@ -524,8 +510,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate noisy_float;
     /// use kd_tree::bucket::KdTreeMap;
     /// use noisy_float::prelude::*;
     ///
@@ -568,10 +552,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    extern crate noisy_float;
-
-    use self::noisy_float::prelude::*;
     use super::*;
+    use noisy_float::prelude::*;
 
     #[test]
     #[should_panic]

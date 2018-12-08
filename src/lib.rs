@@ -5,9 +5,6 @@
 //! ### Bucket implementation
 //!
 //! ```rust
-//! # extern crate kd_tree;
-//! # extern crate noisy_float;
-//! # extern crate num_traits;
 //! use kd_tree::{bucket::{KdTreeMap, KdTreeSet}, PointDist};
 //! use noisy_float::prelude::*;
 //! use num_traits::{Float, Zero};
@@ -62,7 +59,6 @@
 //! ### Trie implementation
 //!
 //! ```rust
-//! # extern crate kd_tree;
 //! use kd_tree::{trie::{KdTreeMap, KdTreeSet}, PointDist};
 //!
 //! let squared_euclidean = |p1: &[f64], p2: &[f64]| -> f64 {
@@ -112,13 +108,6 @@
 //! );
 //! ```
 
-extern crate failure;
-extern crate num_traits;
-#[cfg(feature = "serialize")]
-extern crate serde;
-#[cfg(feature = "serialize")]
-extern crate serde_derive;
-
 pub mod bucket;
 pub mod trie;
 
@@ -127,7 +116,7 @@ mod error;
 mod point_dist;
 mod split;
 
-pub use error::{Error, ErrorKind};
-pub use point_dist::PointDist;
+pub use crate::error::{Error, ErrorKind};
+pub use crate::point_dist::PointDist;
 
 pub type Result<T> = std::result::Result<T, Error>;

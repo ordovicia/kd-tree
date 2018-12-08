@@ -1,6 +1,3 @@
-extern crate kd_tree;
-extern crate rand;
-extern crate serde_json;
 
 use rand::{distributions::uniform::SampleUniform, Rng};
 
@@ -26,7 +23,8 @@ fn test_trie_map_serde() {
                 f64::from(gen_rand(-9, 10)),
                 f64::from(gen_rand(-9, 10)),
             ]
-        }).collect::<Vec<[f64; DIM]>>();
+        })
+        .collect::<Vec<[f64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p, VALUE).unwrap();
@@ -50,7 +48,8 @@ fn test_trie_set_serde() {
                 f64::from(gen_rand(-9, 10)),
                 f64::from(gen_rand(-9, 10)),
             ]
-        }).collect::<Vec<[f64; DIM]>>();
+        })
+        .collect::<Vec<[f64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p).unwrap();

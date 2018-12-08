@@ -59,7 +59,8 @@ where
                 } else {
                     p_min.clone()
                 }
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         dist_func(point, &p2[..])
     }

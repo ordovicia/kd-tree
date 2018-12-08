@@ -61,7 +61,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -101,7 +100,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -141,7 +139,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -185,7 +182,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -228,8 +224,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
-    /// # extern crate num_traits;
     /// use kd_tree::{trie::KdTreeMap, PointDist};
     ///
     /// let squared_euclidean = |p1: &[f64], p2: &[f64]| -> f64 {
@@ -279,7 +273,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -323,7 +316,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);
@@ -493,7 +485,6 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # extern crate kd_tree;
     /// use kd_tree::trie::KdTreeMap;
     ///
     /// let mut kdtree = KdTreeMap::new(2);

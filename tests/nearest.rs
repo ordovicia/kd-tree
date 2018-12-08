@@ -1,8 +1,3 @@
-extern crate kd_tree;
-extern crate noisy_float;
-extern crate num_traits;
-extern crate rand;
-
 use noisy_float::prelude::*;
 use num_traits::Float;
 use rand::{distributions::uniform::SampleUniform, Rng};
@@ -84,7 +79,8 @@ fn test_bucket_nearest_map_dim3_bucket4_points1024() {
                 r64(gen_rand(-1.0, 1.0)),
                 r64(gen_rand(-1.0, 1.0)),
             ]
-        }).collect::<Vec<[R64; DIM]>>();
+        })
+        .collect::<Vec<[R64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p, gen_rand(0, 10)).unwrap();
@@ -141,7 +137,8 @@ fn test_bucket_nearest_set_dim3_bucket4_points1024() {
                 r64(gen_rand(-1.0, 1.0)),
                 r64(gen_rand(-1.0, 1.0)),
             ]
-        }).collect::<Vec<[R64; DIM]>>();
+        })
+        .collect::<Vec<[R64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p).unwrap();
@@ -194,7 +191,8 @@ fn test_trie_nearest_map_dim3_points1024() {
                 r64(gen_rand(-1.0, 1.0)),
                 r64(gen_rand(-1.0, 1.0)),
             ]
-        }).collect::<Vec<[R64; DIM]>>();
+        })
+        .collect::<Vec<[R64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p, gen_rand(0, 10)).unwrap();
@@ -247,7 +245,8 @@ fn test_trie_nearest_set_dim3_points1024() {
                 r64(gen_rand(-1.0, 1.0)),
                 r64(gen_rand(-1.0, 1.0)),
             ]
-        }).collect::<Vec<[R64; DIM]>>();
+        })
+        .collect::<Vec<[R64; DIM]>>();
 
     for p in points.clone() {
         kdtree.append(p).unwrap();

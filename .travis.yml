@@ -4,9 +4,14 @@ rust:
   - nightly
 
 before_script:
-  - rustup component add clippy-preview
+  - |
+    if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
+      rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+    else
+      rustup component add clippy
+    fi
 script:
-  - cargo clippy --all-targets --all-features -- --allow clippy::map_entry --deny warnings
+  - cargo clippy --all-targets --all-features -- --deny warnings
   - cargo build --verbose --all --all-targets --all-features
   - cargo test --verbose --all --all-targets --all-features
 
