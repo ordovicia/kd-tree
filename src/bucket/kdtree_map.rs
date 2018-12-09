@@ -51,11 +51,13 @@ where
     }
 
     /// Returns the number of dimensions of this kd-tree.
+    #[inline]
     pub fn dim(&self) -> usize {
         self.dim
     }
 
     /// Returns the bucket size of this kd-tree.
+    #[inline]
     pub fn bucket_size(&self) -> usize {
         self.bucket_size
     }
@@ -342,6 +344,7 @@ where
         Ok(self.get_mut_unchecked(query))
     }
 
+    #[inline]
     fn check_point(&self, point: &[Axis]) -> Result<()> {
         if point.len() != self.dim {
             Err(ErrorKind::DimensionNotMatch {
@@ -406,6 +409,7 @@ where
         Some(point_nearest)
     }
 
+    #[inline]
     fn nearest_point_node(
         &self,
         query: &[Axis],
@@ -492,6 +496,7 @@ where
         (width, median)
     }
 
+    #[inline]
     fn with_points_cell(
         dim: usize,
         bucket_size: usize,

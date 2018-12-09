@@ -12,6 +12,7 @@ impl<Axis> Split<Axis>
 where
     Axis: Clone + PartialOrd,
 {
+    #[inline]
     pub fn belongs_to_left<Point: AsRef<[Axis]>>(&self, point: &Point) -> bool {
         let point = point.as_ref();
         point[self.dim] < self.thresh

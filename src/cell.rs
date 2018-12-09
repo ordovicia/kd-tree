@@ -35,31 +35,23 @@ where
         (left, right)
     }
 
+    #[inline]
     pub fn dist_to_point(&self, point: &[Axis], dist_func: &Fn(&[Axis], &[Axis]) -> Axis) -> Axis {
         let p2 = point
             .iter()
             .zip(self.min.iter().zip(self.max.iter()))
             .map(|(p, (min, max))| {
-                let p_min = if let Some(min) = min {
-                    if p < min {
-                        min
-                    } else {
-                        p
-                    }
-                } else {
-                    p
+                let p_min = match min {
+                    Some(min) if p < min => min,
+                    _ => p,
                 };
 
-                if let Some(max) = max {
-                    if p_min > max {
-                        max.clone()
-                    } else {
-                        p_min.clone()
-                    }
-                } else {
-                    p_min.clone()
+                match max {
+                    Some(max) if p_min > max => max,
+                    _ => p_min,
                 }
             })
+            .cloned()
             .collect::<Vec<_>>();
 
         dist_func(point, &p2[..])

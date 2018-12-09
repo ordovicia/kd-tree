@@ -51,6 +51,7 @@ where
     }
 
     /// Returns the number of dimensions of this kd-tree.
+    #[inline]
     pub fn dim(&self) -> usize {
         self.dim
     }
@@ -333,6 +334,7 @@ where
         Ok(self.get_mut_unchecked(query))
     }
 
+    #[inline]
     fn check_point(&self, point: &[Axis]) -> Result<()> {
         if point.len() != self.dim {
             Err(ErrorKind::DimensionNotMatch {
@@ -472,6 +474,7 @@ where
         Split { dim, thresh }
     }
 
+    #[inline]
     fn with_depth_cell(dim: usize, depth: usize, cell: Cell<Axis>) -> Self {
         Self {
             dim,
