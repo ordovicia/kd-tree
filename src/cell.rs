@@ -36,7 +36,7 @@ where
     }
 
     #[inline]
-    pub fn dist_to_point(&self, point: &[Axis], dist_func: &Fn(&[Axis], &[Axis]) -> Axis) -> Axis {
+    pub fn dist_to_point(&self, point: &[Axis], dist_func: &dyn Fn(&[Axis], &[Axis]) -> Axis) -> Axis {
         let p2 = point
             .iter()
             .zip(self.min.iter().zip(self.max.iter()))

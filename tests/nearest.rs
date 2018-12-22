@@ -11,7 +11,7 @@ fn squared_euclidean<T: Float>(p1: &[T], p2: &[T]) -> T {
         .fold(T::zero(), std::ops::Add::add)
 }
 
-fn nearest_linear<'a, A, P>(query: &P, points: &'a [P], dist_func: &Fn(&[A], &[A]) -> A) -> &'a P
+fn nearest_linear<'a, A, P>(query: &P, points: &'a [P], dist_func: &dyn Fn(&[A], &[A]) -> A) -> &'a P
 where
     A: Float,
     P: AsRef<[A]>,

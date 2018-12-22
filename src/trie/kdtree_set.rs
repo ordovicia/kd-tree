@@ -148,7 +148,7 @@ where
     pub fn nearest(
         &self,
         query: &Point,
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+        dist_func: &dyn Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Result<Option<PointDist<Axis, &Point, usize>>> {
         let pd = self.map.nearest(query, dist_func)?;
         let pd = pd.map(|PointDist { point, value, dist }| PointDist {

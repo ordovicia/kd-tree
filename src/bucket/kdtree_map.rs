@@ -278,7 +278,7 @@ where
     pub fn nearest(
         &self,
         query: &Point,
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+        dist_func: &dyn Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Result<Option<PointDist<Axis, &Point, &Vec<Value>>>> {
         self.check_point(query.as_ref())?;
         Ok(self.nearest_rec(query, None, dist_func))
@@ -366,7 +366,7 @@ where
         &self,
         query: &Point,
         mut dist_min: Option<Axis>,
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+        dist_func: &dyn Fn(&[Axis], &[Axis]) -> Axis,
     ) -> Option<PointDist<Axis, &Point, &Vec<Value>>> {
         if self.size() == 0 {
             return None;
@@ -413,7 +413,7 @@ where
     fn nearest_point_node(
         &self,
         query: &[Axis],
-        dist_func: &Fn(&[Axis], &[Axis]) -> Axis,
+        dist_func: &dyn Fn(&[Axis], &[Axis]) -> Axis,
     ) -> PointDist<Axis, &Point, &Vec<Value>> {
         self.points
             .iter()
