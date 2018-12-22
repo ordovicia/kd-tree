@@ -1,6 +1,6 @@
 use num_traits::Float;
 #[cfg(feature = "serialize")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{cell::Cell, error::ErrorKind, point_dist::PointDist, split::Split, Result};
 

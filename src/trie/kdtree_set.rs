@@ -1,6 +1,6 @@
 use num_traits::Float;
 #[cfg(feature = "serialize")]
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{point_dist::PointDist, trie::kdtree_map::KdTreeMap, Result};
 
